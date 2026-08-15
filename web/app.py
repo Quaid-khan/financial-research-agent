@@ -87,6 +87,7 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
                 if not task_input:
                     task = f"Analyze financial performance, 10-K revenue disclosures, and risk factors for {identity.name} ({ticker})."
                 else:
+                    task = task_input
                     if ("JPMORGAN" in task_input.upper() or "CHASE" in task_input.upper()) and ticker != "JPM":
                         logger.info(f"Query Router: Task specified JPMorgan Chase, overriding ticker '{ticker}' -> 'JPM'")
                         identity = resolve_canonical_company("JPM")
