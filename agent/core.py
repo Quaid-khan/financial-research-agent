@@ -228,6 +228,15 @@ SCRATCHPAD TRAJECTORY:
 
         if not state.is_completed:
             logger.warning(f"ReAct agent reached max_steps limit ({state.max_steps}) without producing Final Answer.")
-            state.final_answer = "Execution reached maximum step limit before final answer was synthesized."
+            state.is_completed = True
+            state.final_answer = f"Maximum step limit of {state.max_steps} reached without final answer synthesized."
+            state.scratchpad.append(AgentStep(
+                step_number=state.step_count + 1,
+                thought="Halting execution because maximum step limit was reached.",
+                action=None,
+                observation=None,
+                is_final=True,
+                final_answer=state.final_answer
+            ))
 
         return state
