@@ -16,12 +16,15 @@ An autonomous, multi-tool AI agent system designed for Banking, Financial Servic
 ```
 financial-research-agent/
 ├── agent/
+│   ├── config.py      # Environment validation & Pydantic settings schema
 │   ├── tools/         # Autonomous agent tools (SEC APIs, market data, parsers)
 │   ├── memory/        # Episodic, semantic, and working memory stores
 │   ├── synthesis/     # Multi-source intelligence & reconciliation engines
 │   └── reporting/     # Structured research report generators & formatters
 ├── eval/
 │   └── challenges/    # Benchmark evaluation cases and financial test suites
+├── scripts/
+│   └── check_setup.py # System setup & environment verification script
 ├── tests/             # Unit and integration test suite
 ├── examples/          # Executable usage scripts and end-to-end demonstrations
 ├── cache/             # Local data and document cache
@@ -36,6 +39,8 @@ financial-research-agent/
 - **Language**: Python 3.11+
 - **Data Models**: Pydantic v2 for strict type safety and schema validation
 - **Configuration**: `python-dotenv` for secure environment variable management
+- **Vector DB**: ChromaDB for local embedding storage
+- **Embeddings**: `sentence-transformers` (`all-MiniLM-L6-v2`)
 - **Testing**: Pytest unit and integration test coverage
 - **Design Philosophy**: Modular architecture where every component is independently testable, reusable, and clearly documented.
 
@@ -46,7 +51,7 @@ financial-research-agent/
 - Python 3.11 or higher
 - Git
 
-### Setup
+### Setup & Installation
 
 1. **Clone the repository**:
    ```bash
@@ -69,14 +74,35 @@ financial-research-agent/
    pip install -r requirements.txt
    ```
 
-4. **Environment Setup**:
+4. **Environment Configuration**:
+   Create a `.env` file from the provided `.env.example` template:
    ```bash
    cp .env.example .env
    ```
 
+### 🔑 Environment Variables & API Key Overview
+
+| Variable | Description | Source / Requirement |
+| :--- | :--- | :--- |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude LLM reasoning | **Required**. Obtain at [console.anthropic.com](https://console.anthropic.com/) |
+| `SEC_EDGAR_USER_AGENT` | User-Agent required by SEC EDGAR Fair Access rules | **Required**. Format: `YourName your.email@example.com` |
+| `EMBEDDING_MODEL` | Local HuggingFace embedding model | Optional (Default: `all-MiniLM-L6-v2`, local execution) |
+| `CHROMA_DB_PATH` | Local ChromaDB vector database directory | Optional (Default: `./cache/chroma_db`) |
+| `FMP_API_KEY` | Financial Modeling Prep key for transcripts | Optional (Free tier 250 req/day at [financialmodelingprep.com](https://site.financialmodelingprep.com/)) |
+| `ALPHA_VANTAGE_API_KEY`| Alpha Vantage key for market data | Optional (Free tier 25 req/day at [alphavantage.co](https://www.alphavantage.co/)) |
+| `FINNHUB_API_KEY` | Finnhub key for financial news & earnings | Optional (Free tier at [finnhub.io](https://finnhub.io/)) |
+
+### 🧪 System Setup Diagnostic Verification
+
+Run the automated diagnostic check script at any time to verify your environment, API keys, local embedding model, and ChromaDB persistent storage:
+
+```bash
+python scripts/check_setup.py
+```
+
 ## 📜 Roadmap & Build Phases
 
-- [x] **Phase 0**: Project Setup & Foundation Architecture
+- [x] **Phase 0**: Project Setup & Environment Configuration Engine
 - [ ] **Phase 1**: Tool Registry & SEC Filing Retrieval Engine
 - [ ] **Phase 2**: Earnings Call & Narrative Analysis Engine
 - [ ] **Phase 3**: Agent Memory & State Management

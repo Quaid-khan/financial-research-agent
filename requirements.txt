@@ -1,12 +1,19 @@
-# Core Dependencies
+# Core Agent Architecture & Configuration
 pydantic>=2.5.0
 python-dotenv>=1.0.0
 typing-extensions>=4.8.0
 
-# HTTP & Networking
+# LLM & AI Clients
+anthropic>=0.18.0
+
+# Vector Store & Embeddings
+chromadb>=0.4.22
+sentence-transformers>=2.2.2
+
+# Networking & Web APIs
 requests>=2.31.0
 httpx>=0.25.0
 
-# Testing & Quality
+# Testing & Quality Assurance
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
