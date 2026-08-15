@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables & Secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Cache & Temporary files
+cache/
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
