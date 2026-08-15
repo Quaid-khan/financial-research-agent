@@ -11,6 +11,10 @@ google-genai>=0.1.0
 chromadb>=0.4.22
 sentence-transformers>=2.2.2
 
+# PDF Generation & Report Export
+fpdf2>=2.7.5
+reportlab>=4.0.8
+
 # Networking & Web APIs
 requests>=2.31.0
 httpx>=0.25.0

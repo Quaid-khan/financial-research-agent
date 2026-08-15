@@ -8,7 +8,7 @@ An autonomous, multi-tool AI agent system designed for Banking, Financial Servic
 - **Earnings Transcript Processing**: Qualitative sentiment tracking, executive guidance extraction, and Q&A topic breakdown.
 - **Three-Layer Memory System**: Working (short-term), Episodic (session-term), and Long-Term (cross-session ChromaDB vector store with hybrid scoring).
 - **Multi-Source Synthesis & Conflict Resolution**: Automated numerical/narrative discrepancy detection with explicit surfacing and source reliability weighting.
-- **Structured Report Generation**: Generating standardized institutional research notes, risk matrices, and valuation context summaries.
+- **Publication-Grade Report Generation**: Generating standardized Markdown and PDF reports with auto-rendered XBRL financial tables, inline source citations, and conflict transparency.
 - **Rigorous Evaluation Suite**: Domain-specific evaluation framework designed to score factual precision, numeric accuracy, hallucination resistance, and analytical depth.
 
 ## 🏗️ Project Architecture
@@ -30,20 +30,26 @@ financial-research-agent/
 │   ├── synthesis/
 │   │   ├── engine.py              # SynthesisEngine & SynthesisResult generator
 │   │   └── conflict_resolution.py # ConflictDetector, EvidenceItem & resolution policy
-│   └── reporting/     # Structured research report generators & formatters
+│   └── reporting/
+│       ├── builder.py   # ReportBuilder and Report container (to_markdown, to_pdf)
+│       └── templates/   # Markdown and financial table template renderers
 ├── eval/
 │   └── challenges/    # Benchmark evaluation cases and financial test suites
 ├── scripts/
-│   └── check_setup.py # System setup & environment verification script
+│   ├── check_setup.py            # System setup & environment verification script
+│   └── generate_sample_report.py # Sample research report generation script
 ├── tests/
 │   ├── test_config.py      # Config validation unit tests
 │   ├── test_react_loop.py  # ReAct loop & ToolRegistry unit tests
 │   ├── test_edgar_tools.py # SEC EDGAR tools unit tests (mocked fixtures)
 │   ├── test_transcripts.py # Earnings transcripts tools unit tests
 │   ├── test_memory.py      # Three-layer memory system unit tests
-│   └── test_synthesis.py   # Multi-source synthesis & conflict resolution unit tests
+│   ├── test_synthesis.py   # Multi-source synthesis & conflict resolution unit tests
+│   └── test_reporting.py   # ReportBuilder, table rendering & PDF export unit tests
 ├── examples/
-│   └── demo_agent.py  # CLI harness demo testing agent against registered tools
+│   ├── demo_agent.py             # CLI harness demo testing agent against registered tools
+│   ├── sample_research_report.md  # Sample portfolio demonstration report (Markdown)
+│   └── sample_research_report.pdf # Sample portfolio demonstration report (PDF)
 ├── cache/             # Local SQLite database and ChromaDB persistent storage
 ├── .env.example       # Environment configuration template
 ├── CHANGELOG.md       # Version history and phase progression tracking
@@ -57,12 +63,13 @@ financial-research-agent/
 - **LLM Engine**: Google Gemini API (`gemini-3.6-flash`) via `google-genai`
 - **Control Flow**: ReAct (Reason-Act-Observe) pattern with structured scratchpad tracing
 - **Data Tools**: SEC EDGAR API (10-K/10-Q/XBRL facts) + Earnings Call Transcripts
+- **Report Generation**: Markdown & PDF export (`fpdf2`) with auto-generated financial tables
 - **Synthesis Engine**: Multi-source claim consolidation & explicit conflict resolution
 - **Memory Architecture**: 3-Layer (Working, Episodic, Long-Term ChromaDB with Hybrid Scoring)
 - **Data Models**: Pydantic v2 for strict type safety and schema validation
 - **Embeddings**: `sentence-transformers` (`all-MiniLM-L6-v2`)
 - **Vector DB**: ChromaDB (`./cache/chroma_db`)
-- **Testing**: Pytest unit test coverage (30 passing tests)
+- **Testing**: Pytest unit test coverage (34 passing tests)
 - **Design Philosophy**: Modular architecture where every component is independently testable, reusable, and clearly documented.
 
 ## 🚀 Getting Started
@@ -95,12 +102,17 @@ financial-research-agent/
    python scripts/check_setup.py
    ```
 
-5. **Run ReAct Agent Demo Harness**:
+5. **Generate Sample Research Report**:
+   ```bash
+   python -m scripts.generate_sample_report
+   ```
+
+6. **Run ReAct Agent Demo Harness**:
    ```bash
    python examples/demo_agent.py
    ```
 
-6. **Run Unit Tests**:
+7. **Run Unit Tests**:
    ```bash
    pytest tests/
    ```
@@ -112,7 +124,7 @@ financial-research-agent/
 - [x] **Phase 2**: SEC EDGAR Filing Retrieval & Financial Ratio Tools
 - [x] **Phase 3**: Three-Layer Memory System (ChromaDB + Hybrid Scoring)
 - [x] **Phase 4**: Multi-Source Synthesis Engine & Explicit Conflict Resolution
-- [ ] **Phase 5**: Report Generation & Delivery Interface
+- [x] **Phase 5**: Publication-Grade Report Generation & PDF Delivery Engine
 - [ ] **Phase 6**: Financial Evaluation & Benchmark Suite
 
 ## 📄 License
