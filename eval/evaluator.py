@@ -1,14 +1,21 @@
-"""Evaluation Framework Orchestrator for Financial Agent.
+"""Phase 6: 21-Metric Quantitative Evaluation Framework & Scorecard Generator.
 
-Runs completed research session traces and reports through all 21 evaluation metrics across 7 categories,
-computing category scores, overall grade, and actionable recommendations.
+Evaluates synthesized research report and agent execution trace across 7 core categories:
+1. Factual Accuracy
+2. Completeness
+3. Reasoning Quality
+4. Conflict Handling
+5. Memory Utilization
+6. Report Quality
+7. Efficiency & Budget
 """
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, List
 
 from agent.core import AgentState
 from agent.reporting.builder import Report
+from eval.scorecard import Scorecard, compute_grade
 from eval.metrics import (
     MetricResult,
     metric_citation_coverage,
@@ -33,7 +40,6 @@ from eval.metrics import (
     metric_api_call_efficiency,
     metric_cost_estimate
 )
-from eval.scorecard import Scorecard, compute_grade
 
 logger = logging.getLogger("financial_agent.eval.evaluator")
 
@@ -47,16 +53,7 @@ class Evaluator:
         report: Report,
         duration_seconds: float = 5.0
     ) -> Scorecard:
-        """Run complete evaluation metrics suite on agent execution state and generated report.
-        
-        Args:
-            state: AgentState trace tracking scratchpad and step count.
-            report: Generated Report object containing synthesis and markdown.
-            duration_seconds: Execution wall-clock duration in seconds.
-            
-        Returns:
-            Scorecard object containing overall score, category breakdown, metric details, and recommendations.
-        """
+        """Run complete evaluation metrics suite on agent execution state and generated report."""
         logger.info(f"Starting agent evaluation for task: '{state.task}'")
 
         # Execute all 21 metric functions
@@ -96,6 +93,18 @@ class Evaluator:
             metric_api_call_efficiency(state),
             metric_cost_estimate(state)
         ]
+
+        # Apply execution failure penalty if agent trace failed to complete task
+        is_completed = getattr(state, "is_completed", True)
+        if not is_completed:
+            for idx, m in enumerate(metrics):
+                if m.category in ["Reasoning Quality", "Factual Accuracy", "Completeness"]:
+                    metrics[idx] = MetricResult(
+                        metric_name=m.metric_name,
+                        category=m.category,
+                        score=min(m.score, 30.0),
+                        description=f"Penalized due to incomplete/failed execution state: {m.description}"
+                    )
 
         # Compute Category Scores
         cat_map: Dict[str, List[float]] = {}

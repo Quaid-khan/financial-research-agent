@@ -21,6 +21,12 @@ class ConfigurationError(Exception):
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
+# Standard SEC EDGAR API Constants & Formats
+SEC_USER_AGENT = os.getenv("SEC_EDGAR_USER_AGENT", "FinancialResearchAgent research@antigravity.ai")
+SEC_SUBMISSIONS_URL_FMT = "https://data.sec.gov/submissions/CIK{cik}.json"
+SEC_FACTS_URL_FMT = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
+SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
+
 
 class Settings(BaseModel):
     """Pydantic model validating system configuration and API keys."""

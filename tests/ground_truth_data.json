@@ -1,0 +1,93 @@
+{
+  "companies": {
+    "JPM": {
+      "name": "JPMORGAN CHASE & CO",
+      "ticker": "JPM",
+      "cik": "0000019617",
+      "is_bank": true,
+      "annual_metrics": {
+        "2024": {
+          "revenue": 158.10,
+          "net_income": 57.00,
+          "total_assets": 4180.00,
+          "cet1_ratio": 0.153
+        },
+        "2023": {
+          "revenue": 148.00,
+          "net_income": 49.50,
+          "total_assets": 3875.00,
+          "cet1_ratio": 0.150
+        },
+        "2022": {
+          "revenue": 128.70,
+          "net_income": 37.68,
+          "total_assets": 3665.00,
+          "cet1_ratio": 0.132
+        }
+      }
+    },
+    "AAPL": {
+      "name": "Apple Inc.",
+      "ticker": "AAPL",
+      "cik": "0000320193",
+      "is_bank": false,
+      "annual_metrics": {
+        "2024": {
+          "revenue": 391.04,
+          "net_income": 93.74,
+          "total_assets": 364.98
+        },
+        "2023": {
+          "revenue": 383.29,
+          "net_income": 96.99,
+          "total_assets": 352.58
+        },
+        "2022": {
+          "revenue": 394.33,
+          "net_income": 99.80,
+          "total_assets": 352.75
+        }
+      }
+    },
+    "BAC": {
+      "name": "BANK OF AMERICA CORP",
+      "ticker": "BAC",
+      "cik": "0000070858",
+      "is_bank": true,
+      "annual_metrics": {
+        "2024": {
+          "revenue": 105.80,
+          "net_income": 26.50,
+          "total_assets": 3260.00,
+          "cet1_ratio": 0.118
+        }
+      }
+    },
+    "MSFT": {
+      "name": "MICROSOFT CORP",
+      "ticker": "MSFT",
+      "cik": "0000789019",
+      "is_bank": false,
+      "annual_metrics": {
+        "2024": {
+          "revenue": 245.12,
+          "net_income": 88.14,
+          "total_assets": 512.16
+        }
+      }
+    },
+    "NVDA": {
+      "name": "NVIDIA CORP",
+      "ticker": "NVDA",
+      "cik": "0001045810",
+      "is_bank": false,
+      "annual_metrics": {
+        "2024": {
+          "revenue": 60.92,
+          "net_income": 29.76,
+          "total_assets": 65.73
+        }
+      }
+    }
+  }
+}
