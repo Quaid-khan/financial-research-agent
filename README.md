@@ -7,7 +7,7 @@ An autonomous, multi-tool AI agent system designed for Banking, Financial Servic
 - **SEC Filings Analysis**: Extraction, parsing, and financial ratio analysis from SEC EDGAR 10-K, 10-Q, and 8-K disclosures.
 - **Earnings Transcript Processing**: Qualitative sentiment tracking, executive guidance extraction, and Q&A topic breakdown.
 - **Three-Layer Memory System**: Working (short-term), Episodic (session-term), and Long-Term (cross-session ChromaDB vector store with hybrid scoring).
-- **Multi-Source Synthesis**: Cross-referencing quantitative financial metrics with qualitative disclosure narrative and macroeconomic data.
+- **Multi-Source Synthesis & Conflict Resolution**: Automated numerical/narrative discrepancy detection with explicit surfacing and source reliability weighting.
 - **Structured Report Generation**: Generating standardized institutional research notes, risk matrices, and valuation context summaries.
 - **Rigorous Evaluation Suite**: Domain-specific evaluation framework designed to score factual precision, numeric accuracy, hallucination resistance, and analytical depth.
 
@@ -27,7 +27,9 @@ financial-research-agent/
 │   │   ├── working.py  # Short-term context & token budget window manager
 │   │   ├── episodic.py # Session-term subtask logger & finding recall
 │   │   └── longterm.py # Persistent ChromaDB vector store & hybrid scoring
-│   ├── synthesis/     # Multi-source intelligence & reconciliation engines
+│   ├── synthesis/
+│   │   ├── engine.py              # SynthesisEngine & SynthesisResult generator
+│   │   └── conflict_resolution.py # ConflictDetector, EvidenceItem & resolution policy
 │   └── reporting/     # Structured research report generators & formatters
 ├── eval/
 │   └── challenges/    # Benchmark evaluation cases and financial test suites
@@ -38,7 +40,8 @@ financial-research-agent/
 │   ├── test_react_loop.py  # ReAct loop & ToolRegistry unit tests
 │   ├── test_edgar_tools.py # SEC EDGAR tools unit tests (mocked fixtures)
 │   ├── test_transcripts.py # Earnings transcripts tools unit tests
-│   └── test_memory.py      # Three-layer memory system unit tests
+│   ├── test_memory.py      # Three-layer memory system unit tests
+│   └── test_synthesis.py   # Multi-source synthesis & conflict resolution unit tests
 ├── examples/
 │   └── demo_agent.py  # CLI harness demo testing agent against registered tools
 ├── cache/             # Local SQLite database and ChromaDB persistent storage
@@ -54,11 +57,12 @@ financial-research-agent/
 - **LLM Engine**: Google Gemini API (`gemini-3.6-flash`) via `google-genai`
 - **Control Flow**: ReAct (Reason-Act-Observe) pattern with structured scratchpad tracing
 - **Data Tools**: SEC EDGAR API (10-K/10-Q/XBRL facts) + Earnings Call Transcripts
+- **Synthesis Engine**: Multi-source claim consolidation & explicit conflict resolution
 - **Memory Architecture**: 3-Layer (Working, Episodic, Long-Term ChromaDB with Hybrid Scoring)
 - **Data Models**: Pydantic v2 for strict type safety and schema validation
 - **Embeddings**: `sentence-transformers` (`all-MiniLM-L6-v2`)
 - **Vector DB**: ChromaDB (`./cache/chroma_db`)
-- **Testing**: Pytest unit test coverage (25 passing tests)
+- **Testing**: Pytest unit test coverage (30 passing tests)
 - **Design Philosophy**: Modular architecture where every component is independently testable, reusable, and clearly documented.
 
 ## 🚀 Getting Started
@@ -107,10 +111,9 @@ financial-research-agent/
 - [x] **Phase 1**: ReAct Core Engine & Tool Registry Architecture
 - [x] **Phase 2**: SEC EDGAR Filing Retrieval & Financial Ratio Tools
 - [x] **Phase 3**: Three-Layer Memory System (ChromaDB + Hybrid Scoring)
-- [ ] **Phase 4**: Earnings Call & Narrative Analysis Engine
-- [ ] **Phase 5**: Multi-Source Synthesis & Reasoning Pipeline
-- [ ] **Phase 6**: Report Generation & Delivery Interface
-- [ ] **Phase 7**: Financial Evaluation & Benchmark Suite
+- [x] **Phase 4**: Multi-Source Synthesis Engine & Explicit Conflict Resolution
+- [ ] **Phase 5**: Report Generation & Delivery Interface
+- [ ] **Phase 6**: Financial Evaluation & Benchmark Suite
 
 ## 📄 License
 
