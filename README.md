@@ -6,8 +6,8 @@ An autonomous, multi-tool AI agent system designed for Banking, Financial Servic
 
 - **SEC Filings Analysis**: Extraction, parsing, and financial ratio analysis from SEC EDGAR 10-K, 10-Q, and 8-K disclosures.
 - **Earnings Transcript Processing**: Qualitative sentiment tracking, executive guidance extraction, and Q&A topic breakdown.
+- **Three-Layer Memory System**: Working (short-term), Episodic (session-term), and Long-Term (cross-session ChromaDB vector store with hybrid scoring).
 - **Multi-Source Synthesis**: Cross-referencing quantitative financial metrics with qualitative disclosure narrative and macroeconomic data.
-- **Agent Memory System**: Episodic and semantic memory architectures for historical context retention and cross-quarter tracking.
 - **Structured Report Generation**: Generating standardized institutional research notes, risk matrices, and valuation context summaries.
 - **Rigorous Evaluation Suite**: Domain-specific evaluation framework designed to score factual precision, numeric accuracy, hallucination resistance, and analytical depth.
 
@@ -23,7 +23,10 @@ financial-research-agent/
 │   │   ├── cache.py       # SQLite response caching engine (LocalCache)
 │   │   ├── edgar.py       # SEC EDGAR search, section parser, XBRL company facts
 │   │   └── transcripts.py # Earnings call transcript fetcher & Q&A segmenter
-│   ├── memory/        # Episodic, semantic, and working memory stores
+│   ├── memory/
+│   │   ├── working.py  # Short-term context & token budget window manager
+│   │   ├── episodic.py # Session-term subtask logger & finding recall
+│   │   └── longterm.py # Persistent ChromaDB vector store & hybrid scoring
 │   ├── synthesis/     # Multi-source intelligence & reconciliation engines
 │   └── reporting/     # Structured research report generators & formatters
 ├── eval/
@@ -34,10 +37,11 @@ financial-research-agent/
 │   ├── test_config.py      # Config validation unit tests
 │   ├── test_react_loop.py  # ReAct loop & ToolRegistry unit tests
 │   ├── test_edgar_tools.py # SEC EDGAR tools unit tests (mocked fixtures)
-│   └── test_transcripts.py # Earnings transcripts tools unit tests
+│   ├── test_transcripts.py # Earnings transcripts tools unit tests
+│   └── test_memory.py      # Three-layer memory system unit tests
 ├── examples/
 │   └── demo_agent.py  # CLI harness demo testing agent against registered tools
-├── cache/             # Local SQLite database and raw filing cache
+├── cache/             # Local SQLite database and ChromaDB persistent storage
 ├── .env.example       # Environment configuration template
 ├── CHANGELOG.md       # Version history and phase progression tracking
 ├── requirements.txt   # Project dependencies
@@ -49,12 +53,12 @@ financial-research-agent/
 - **Language**: Python 3.11+
 - **LLM Engine**: Google Gemini API (`gemini-3.6-flash`) via `google-genai`
 - **Control Flow**: ReAct (Reason-Act-Observe) pattern with structured scratchpad tracing
-- **Data Collection Tools**: SEC EDGAR API (10-K/10-Q/XBRL facts) + Earnings Call Transcripts
+- **Data Tools**: SEC EDGAR API (10-K/10-Q/XBRL facts) + Earnings Call Transcripts
+- **Memory Architecture**: 3-Layer (Working, Episodic, Long-Term ChromaDB with Hybrid Scoring)
 - **Data Models**: Pydantic v2 for strict type safety and schema validation
-- **Caching**: Local SQLite database cache (`cache/http_cache.db`)
-- **Vector DB**: ChromaDB for local embedding storage
 - **Embeddings**: `sentence-transformers` (`all-MiniLM-L6-v2`)
-- **Testing**: Pytest unit and integration test coverage with mocked API fixtures
+- **Vector DB**: ChromaDB (`./cache/chroma_db`)
+- **Testing**: Pytest unit test coverage (25 passing tests)
 - **Design Philosophy**: Modular architecture where every component is independently testable, reusable, and clearly documented.
 
 ## 🚀 Getting Started
@@ -102,8 +106,8 @@ financial-research-agent/
 - [x] **Phase 0**: Project Setup & Environment Configuration Engine
 - [x] **Phase 1**: ReAct Core Engine & Tool Registry Architecture
 - [x] **Phase 2**: SEC EDGAR Filing Retrieval & Financial Ratio Tools
-- [ ] **Phase 3**: Earnings Call & Narrative Analysis Engine
-- [ ] **Phase 4**: Agent Memory & State Management
+- [x] **Phase 3**: Three-Layer Memory System (ChromaDB + Hybrid Scoring)
+- [ ] **Phase 4**: Earnings Call & Narrative Analysis Engine
 - [ ] **Phase 5**: Multi-Source Synthesis & Reasoning Pipeline
 - [ ] **Phase 6**: Report Generation & Delivery Interface
 - [ ] **Phase 7**: Financial Evaluation & Benchmark Suite

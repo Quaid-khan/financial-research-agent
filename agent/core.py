@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from agent.config import get_settings
 from agent.tools.registry import ToolRegistry, ToolResult, default_registry
+from agent.memory.working import WorkingMemoryManager
 
 # Configure logger for structured agent trajectory inspectability
 logger = logging.getLogger("financial_agent")
@@ -59,13 +60,16 @@ class AgentState(BaseModel):
             self.is_completed = True
             self.final_answer = step.final_answer
 
-    def format_scratchpad_history(self) -> str:
-        """Format scratchpad trace into text prompt for ReAct reasoning."""
+    def format_scratchpad_history(self, token_budget: int = 4000) -> str:
+        """Format scratchpad trace into text prompt using WorkingMemoryManager pruning."""
         if not self.scratchpad:
             return "No previous steps taken."
             
+        working_mem = WorkingMemoryManager(token_budget=token_budget)
+        active_steps = working_mem.prunable_steps(self.scratchpad)
+
         trace_lines = []
-        for step in self.scratchpad:
+        for step in active_steps:
             trace_lines.append(f"Step {step.step_number}:")
             trace_lines.append(f"Thought: {step.thought}")
             if step.action:
@@ -157,11 +161,7 @@ Next Step:
 """
 
     def _parse_llm_response(self, response_text: str) -> tuple[str, Optional[ToolCall], bool, Optional[str]]:
-        """Parse raw LLM response string into Thought, Action/ToolCall, and Final Answer.
-        
-        Returns:
-            Tuple of (thought, tool_call, is_final, final_answer)
-        """
+        """Parse raw LLM response string into Thought, Action/ToolCall, and Final Answer."""
         thought = ""
         action_name = None
         action_args = {}
@@ -192,13 +192,11 @@ Next Step:
                 try:
                     action_args = json.loads(args_str)
                 except Exception:
-                    # Fallback single parameter parsing if json parsing fails
                     action_args = {"query": args_str.strip('"\'')}
             
             tool_call = ToolCall(name=action_name, arguments=action_args)
             return thought, tool_call, False, None
 
-        # Fallback if no explicit Action or Final Answer keyword was generated
         if "final answer" in response_text.lower():
             is_final = True
             final_answer = response_text
@@ -255,14 +253,7 @@ Next Step:
         )
 
     def run(self, task: str) -> AgentState:
-        """Run complete ReAct loop until task completion or max_steps limit is reached.
-        
-        Args:
-            task: User research prompt or financial analysis goal.
-            
-        Returns:
-            AgentState containing final answer, scratchpad trace, and metrics.
-        """
+        """Run complete ReAct loop until task completion or max_steps limit is reached."""
         logger.info(f"🚀 Starting Autonomous Agent Task: '{task}'")
         state = AgentState(task=task, max_steps=self.max_steps)
 
