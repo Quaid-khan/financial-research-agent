@@ -1,52 +1,66 @@
-"""ReportBuilder and Report classes for generating institutional financial reports in Markdown and PDF format."""
+"""Phase 5: Report Builder & Document Generation Engine.
 
-import os
+Transforms Phase 4 SynthesisResult and structured financial statement data into
+publication-grade financial research reports formatted as Markdown and exported as PDF.
+"""
+
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
 
-from fpdf import FPDF
-from agent.config import get_settings
+try:
+    from fpdf import FPDF
+    HAS_FPDF = True
+except ImportError:
+    HAS_FPDF = False
+
 from agent.synthesis.engine import SynthesisResult
 from agent.reporting.templates.markdown_template import render_markdown_report
 
-logger = logging.getLogger("financial_agent.reporting.builder")
+logger = logging.getLogger("financial_agent.reporting")
 
 
-class PDFReportGenerator(FPDF):
-    """Custom FPDF class for institutional PDF report styling."""
+class PDFReportGenerator(FPDF if HAS_FPDF else object):
+    """Custom FPDF2 canvas for generating styled institutional financial PDFs."""
 
-    def __init__(self, title_text: str = "Financial Research Report") -> None:
-        super().__init__()
+    def __init__(self, title_text: str = "Financial Research Report"):
+        if not HAS_FPDF:
+            raise RuntimeError("fpdf2 package is required for PDF export. Run 'pip install fpdf2'.")
+        super().__init__(orientation="P", unit="mm", format="A4")
         self.title_text = title_text
         self.set_auto_page_break(auto=True, margin=15)
 
-    def header(self) -> None:
+    def header(self):
         self.set_font("Helvetica", "B", 10)
-        self.set_text_color(100, 100, 100)
-        self.cell(0, 10, self.title_text, border=0, new_x="RIGHT", new_y="TOP", align="L")
-        self.cell(0, 10, "Autonomous Financial Agent", border=0, new_x="LMARGIN", new_y="NEXT", align="R")
-        self.line(10, 18, 200, 18)
+        self.set_text_color(100, 110, 120)
+        self.cell(0, 8, "ANTIGRAVITY AUTONOMOUS FINANCIAL RESEARCH", border=False, new_x="LMARGIN", new_y="NEXT", align="L")
+        self.set_draw_color(200, 210, 220)
+        self.line(10, 16, 200, 16)
         self.ln(5)
 
-    def footer(self) -> None:
+    def footer(self):
         self.set_y(-15)
         self.set_font("Helvetica", "I", 8)
-        self.set_text_color(150, 150, 150)
-        page_str = f"Page {self.page_no()}"
-        self.cell(0, 10, page_str, border=0, align="C")
+        self.set_text_color(140, 140, 140)
+        self.cell(0, 10, f"Page {self.page_no()} | Institutional Disclosures & Citation Verified", align="C")
 
 
-class Report(BaseModel):
-    """Institutional research report container."""
-    markdown_content: str = Field(description="Full markdown source text of report.")
-    company_name: str = Field(description="Company entity name.")
-    ticker: str = Field(description="Stock ticker symbol.")
-    synthesis_result: SynthesisResult = Field(description="Phase 4 synthesis result data.")
+class Report:
+    """Container holding synthesized research report in Markdown and PDF export utility."""
+
+    def __init__(
+        self,
+        markdown_content: str,
+        company_name: str,
+        ticker: str,
+        synthesis_result: SynthesisResult
+    ):
+        self.markdown_content = markdown_content
+        self.company_name = company_name
+        self.ticker = ticker
+        self.synthesis_result = synthesis_result
 
     def to_markdown(self) -> str:
-        """Return markdown text content."""
         return self.markdown_content
 
     def to_pdf(self, output_path: str) -> str:
@@ -69,30 +83,47 @@ class Report(BaseModel):
                 pdf.ln(3)
                 continue
 
-            if line_str.startswith("# "):
+            # 1. Replace common Unicode typography characters with ASCII equivalents
+            clean_text = (
+                line_str.replace("•", "- ")
+                .replace("—", "- ")
+                .replace("–", "- ")
+                .replace("“", '"')
+                .replace("”", '"')
+                .replace("’", "'")
+                .replace("‘", "'")
+                .replace("**", "")
+                .replace("`", "")
+                .replace("*", "")
+            )
+            # 2. Strict ASCII encoding to guarantee FPDF Helvetica core font compatibility
+            clean_text = clean_text.encode("ascii", errors="ignore").decode("ascii")
+
+            if not clean_text:
+                continue
+
+            if clean_text.startswith("# "):
                 pdf.set_font("Helvetica", "B", 16)
                 pdf.set_text_color(20, 40, 80)
-                pdf.multi_cell(0, 8, line_str[2:])
+                pdf.multi_cell(0, 8, clean_text[2:])
                 pdf.ln(2)
-            elif line_str.startswith("## "):
+            elif clean_text.startswith("## "):
                 pdf.set_font("Helvetica", "B", 13)
                 pdf.set_text_color(30, 60, 110)
-                pdf.multi_cell(0, 7, line_str[3:])
+                pdf.multi_cell(0, 7, clean_text[3:])
                 pdf.ln(2)
-            elif line_str.startswith("### "):
+            elif clean_text.startswith("### "):
                 pdf.set_font("Helvetica", "B", 11)
                 pdf.set_text_color(40, 40, 40)
-                pdf.multi_cell(0, 6, line_str[4:])
+                pdf.multi_cell(0, 6, clean_text[4:])
                 pdf.ln(1)
-            elif line_str.startswith("|"):
+            elif clean_text.startswith("|"):
                 pdf.set_font("Courier", size=8)
                 pdf.set_text_color(50, 50, 50)
-                pdf.cell(0, 5, line_str[:90], new_x="LMARGIN", new_y="NEXT")
+                pdf.cell(0, 5, clean_text[:90], new_x="LMARGIN", new_y="NEXT")
             else:
                 pdf.set_font("Helvetica", size=9)
                 pdf.set_text_color(20, 20, 20)
-                # Clean up simple markdown formatting bold/italic markers for clean PDF display
-                clean_text = line_str.replace("**", "").replace("`", "").replace("*", "")
                 pdf.multi_cell(0, 5, clean_text)
                 pdf.ln(1)
 
@@ -110,13 +141,14 @@ class Report(BaseModel):
             saved_paths["markdown"] = str(m_path)
 
         if pdf_path:
-            saved_paths["pdf"] = self.to_pdf(pdf_path)
+            pdf_out = self.to_pdf(pdf_path)
+            saved_paths["pdf"] = pdf_out
 
         return saved_paths
 
 
 class ReportBuilder:
-    """Builder converting SynthesisResult and structured financial data into institutional research reports."""
+    """Builder engine orchestrating synthesis results & templates into Report objects."""
 
     def build(
         self,
@@ -126,18 +158,7 @@ class ReportBuilder:
         ticker: str = "JPM",
         use_llm: bool = True
     ) -> Report:
-        """Build institutional Report object.
-        
-        Args:
-            synthesis_result: Phase 4 SynthesisResult object.
-            financial_data: Optional financial statement metrics dictionary.
-            company_name: Entity name string.
-            ticker: Stock ticker symbol string.
-            use_llm: True to refine prose with Gemini API, False for template rendering.
-            
-        Returns:
-            Report object containing markdown content and to_pdf() renderer.
-        """
+        """Build institutional Report object."""
         markdown_text = render_markdown_report(
             company_name=company_name,
             ticker=ticker,
