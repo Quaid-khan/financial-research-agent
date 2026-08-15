@@ -5,29 +5,33 @@ All notable changes to the Autonomous Financial Research Agent will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.0.0] - 2026-08-16
+
+### Added - Phase 7 End-to-End Benchmark Challenges & Portfolio Verification
+- Implemented **8 Progressively Difficult Benchmark Challenges** in `eval/challenges/` validating full agent pipeline (Phases 1-6):
+  1. `challenge_01.py`: Single-company 10-K lookup.
+  2. `challenge_02.py`: Multi-year trend analysis (3-year revenue trend).
+  3. `challenge_03.py`: Earnings call sentiment & executive guidance extraction.
+  4. `challenge_04.py`: Cross-source conflict detection & resolution.
+  5. `challenge_05.py`: Multi-company comparative analysis (JPM, BAC, AAPL).
+  6. `challenge_06.py`: Memory-dependent follow-up query (cross-session ChromaDB recall).
+  7. `challenge_07.py`: Reasoning under ambiguity ('Chase' -> JPM entity resolution).
+  8. `challenge_08.py`: Capstone end-to-end research report generation & 21-metric scorecard evaluation.
+- Implemented `eval/run_all_challenges.py` benchmark runner.
+- Generated `RESULTS.md` portfolio centerpiece documentation summarizing all 8 challenge results (100.0% pass rate).
+- Added unit test suite in `tests/test_challenges.py` verifying all 8 challenges (45 total unit & integration tests passing).
+
 ## [6.0.0] - 2026-08-16
 
 ### Added - Phase 6 Financial Evaluation Framework (21 Metrics across 7 Categories)
-- Implemented **21 Named Evaluation Metrics** in `eval/metrics.py` grouped into 7 core categories:
-  1. Factual Accuracy: `citation_coverage`, `citation_correctness`, `numeric_accuracy`.
-  2. Completeness: `section_completeness`, `financial_depth`, `source_breadth`.
-  3. Reasoning Quality: `react_efficiency`, `tool_selection_appropriateness`, `error_recovery_rate`.
-  4. Conflict Handling: `conflict_detection_rate`, `conflict_transparency`.
-  5. Memory Utilization: `working_memory_efficiency`, `episodic_recall_accuracy`, `longterm_memory_hit_rate`.
-  6. Report Quality: `readability_score`, `professional_tone`, `formatting_correctness`.
-  7. Efficiency & Budget: `token_efficiency`, `execution_latency`, `api_call_efficiency`, `cost_estimate`.
-- Implemented `Evaluator` orchestrator class in `eval/evaluator.py` to evaluate completed agent state traces and generated reports.
-- Implemented `Scorecard` container model in `eval/scorecard.py` with overall score (0-100), letter grade assignment (A+ to F), category score breakdown, and actionable improvement recommendations.
-- Added sample demonstration evaluation scorecard outputs in `examples/sample_scorecard.json` and `examples/sample_scorecard.md`.
-- Added unit test suite in `tests/test_eval.py` verifying metric calculation, evaluator orchestration, letter grade assignment, and scorecard exports (37 total unit tests passing).
+- Implemented **21 Named Evaluation Metrics** in `eval/metrics.py`.
+- Implemented `Evaluator` orchestrator class in `eval/evaluator.py`.
+- Implemented `Scorecard` container model in `eval/scorecard.py`.
 
 ## [5.0.0] - 2026-08-16
 
 ### Added - Phase 5 Report Generation & Delivery Interface (Markdown & PDF Export)
 - Implemented `ReportBuilder` and `Report` classes in `agent/reporting/builder.py`.
-- Added Markdown template renderer with auto-generated financial tables.
-- Implemented PDF report exporter using `fpdf2` (`PDFReportGenerator`).
-- Registered `generate_research_report` tool with `default_registry`.
 
 ## [4.0.0] - 2026-08-16
 
@@ -42,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - 2026-08-16
 
 ### Added - Phase 2 Financial Data Collection Tools
-- Implemented `sec_edgar_search`, `sec_edgar_get_filing`, `get_financial_statements`, and `get_earnings_transcript` tools.
+- Implemented SEC EDGAR tools and transcripts tool.
 
 ## [1.0.0] - 2026-08-16
 

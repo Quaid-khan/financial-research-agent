@@ -10,6 +10,7 @@ An autonomous, multi-tool AI agent system designed for Banking, Financial Servic
 - **Multi-Source Synthesis & Conflict Resolution**: Automated numerical/narrative discrepancy detection with explicit surfacing and source reliability weighting.
 - **Publication-Grade Report Generation**: Generating standardized Markdown and PDF reports with auto-rendered XBRL financial tables, inline source citations, and conflict transparency.
 - **21-Metric Financial Evaluation Framework**: Systematic scoring suite across 7 categories (Factual Accuracy, Completeness, Reasoning Quality, Conflict Handling, Memory Utilization, Report Quality, Efficiency & Budget).
+- **8 End-to-End Benchmark Challenges**: Automated benchmark suite validating complete agent capabilities from simple lookups to capstone research reports (100% Pass Rate).
 
 ## 🏗️ Project Architecture
 
@@ -34,9 +35,11 @@ financial-research-agent/
 │       ├── builder.py   # ReportBuilder and Report container (to_markdown, to_pdf)
 │       └── templates/   # Markdown and financial table template renderers
 ├── eval/
-│   ├── metrics.py     # 21 named evaluation metric functions across 7 categories
-│   ├── evaluator.py   # Evaluator orchestrator executing agent trace evaluation
-│   └── scorecard.py   # Scorecard model with overall score (0-100), grade (A+-F), & JSON/MD formatters
+│   ├── metrics.py               # 21 named evaluation metric functions across 7 categories
+│   ├── evaluator.py             # Evaluator orchestrator executing agent trace evaluation
+│   ├── scorecard.py             # Scorecard model with overall score (0-100), grade (A+-F), & formatters
+│   ├── run_all_challenges.py    # Benchmark runner executing all 8 end-to-end challenges
+│   └── challenges/              # 8 End-to-End Benchmark Challenges (challenge_01 - challenge_08)
 ├── scripts/
 │   ├── check_setup.py               # System setup & environment verification script
 │   ├── generate_sample_report.py    # Sample research report generation script
@@ -49,13 +52,15 @@ financial-research-agent/
 │   ├── test_memory.py      # Three-layer memory system unit tests
 │   ├── test_synthesis.py   # Multi-source synthesis & conflict resolution unit tests
 │   ├── test_reporting.py   # ReportBuilder, table rendering & PDF export unit tests
-│   └── test_eval.py        # 21 evaluation metrics, Evaluator & Scorecard unit tests
+│   ├── test_eval.py        # 21 evaluation metrics, Evaluator & Scorecard unit tests
+│   └── test_challenges.py  # 8 End-to-end benchmark challenge unit tests
 ├── examples/
 │   ├── demo_agent.py             # CLI harness demo testing agent against registered tools
 │   ├── sample_research_report.md  # Sample portfolio demonstration report (Markdown)
 │   ├── sample_research_report.pdf # Sample portfolio demonstration report (PDF)
 │   ├── sample_scorecard.json      # Sample evaluation scorecard output (JSON)
 │   └── sample_scorecard.md        # Sample evaluation scorecard summary (Markdown)
+├── RESULTS.md         # Portfolio centerpiece benchmark results matrix (100% Pass Rate)
 ├── cache/             # Local SQLite database and ChromaDB persistent storage
 ├── .env.example       # Environment configuration template
 ├── CHANGELOG.md       # Version history and phase progression tracking
@@ -73,10 +78,11 @@ financial-research-agent/
 - **Synthesis Engine**: Multi-source claim consolidation & explicit conflict resolution
 - **Memory Architecture**: 3-Layer (Working, Episodic, Long-Term ChromaDB with Hybrid Scoring)
 - **Evaluation Suite**: 21 named metrics across 7 categories producing institutional scorecards
+- **Benchmark Suite**: 8 end-to-end challenges validating capabilities across all phases
 - **Data Models**: Pydantic v2 for strict type safety and schema validation
 - **Embeddings**: `sentence-transformers` (`all-MiniLM-L6-v2`)
 - **Vector DB**: ChromaDB (`./cache/chroma_db`)
-- **Testing**: Pytest unit test coverage (37 passing tests)
+- **Testing**: Pytest unit test coverage (45 passing tests)
 - **Design Philosophy**: Modular architecture where every component is independently testable, reusable, and clearly documented.
 
 ## 🚀 Getting Started
@@ -109,22 +115,27 @@ financial-research-agent/
    python scripts/check_setup.py
    ```
 
-5. **Generate Sample Research Report**:
+5. **Run 8 Benchmark Challenges**:
+   ```bash
+   python -m eval.run_all_challenges
+   ```
+
+6. **Generate Sample Research Report**:
    ```bash
    python -m scripts.generate_sample_report
    ```
 
-6. **Generate Sample Evaluation Scorecard**:
+7. **Generate Sample Evaluation Scorecard**:
    ```bash
    python -m scripts.generate_sample_scorecard
    ```
 
-7. **Run ReAct Agent Demo Harness**:
+8. **Run ReAct Agent Demo Harness**:
    ```bash
    python examples/demo_agent.py
    ```
 
-8. **Run Complete Unit Test Suite**:
+9. **Run Complete Unit Test Suite**:
    ```bash
    pytest tests/
    ```
@@ -138,6 +149,7 @@ financial-research-agent/
 - [x] **Phase 4**: Multi-Source Synthesis Engine & Explicit Conflict Resolution
 - [x] **Phase 5**: Publication-Grade Report Generation & PDF Delivery Engine
 - [x] **Phase 6**: Financial Evaluation Framework (21 Metrics across 7 Categories)
+- [x] **Phase 7**: End-to-End Benchmark Challenges & Portfolio Verification (8/8 Passed)
 
 ## 📄 License
 
