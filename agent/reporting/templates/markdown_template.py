@@ -16,26 +16,26 @@ def render_financial_tables(financial_data: Optional[Dict[str, Any]]) -> str:
     """Render auto-generated Markdown tables from structured XBRL financial statement data.
     
     Filters for annual disclosures (fp == 'FY' or 10-K form) and aligns metrics cleanly by fiscal year.
+    Displays explicit missing status for requested years/metrics.
     """
     if not financial_data or "metrics" not in financial_data:
         return "*Structured financial statement data unavailable for table rendering.*"
 
     metrics = financial_data.get("metrics", {})
+    completeness = financial_data.get("completeness_status", {})
     lines = []
 
     def get_annual_items(concept_key: str) -> Dict[int, Dict[str, Any]]:
         raw_items = metrics.get(concept_key, [])
         annual_map = {}
         for item in raw_items:
-            fy = item.get("fy")
+            fy = item.get("fiscal_year") or item.get("fy")
             form = str(item.get("form") or "").upper()
-            fp = str(item.get("fp") or "").upper()
+            fp = str(item.get("fiscal_period") or item.get("fp") or "").upper()
 
-            # Filter for annual disclosures
             is_annual = fp == "FY" or "10-K" in form or form == "NONE" or not fp
-            if is_annual and fy:
-                # Prefer latest filed date or entry with val
-                if fy not in annual_map or (item.get("val") and not annual_map[yr_val].get("val")):
+            if is_annual and fy is not None:
+                if fy not in annual_map or (item.get("value") and not annual_map[fy].get("value")):
                     annual_map[fy] = item
         return annual_map
 
@@ -44,30 +44,46 @@ def render_financial_tables(financial_data: Optional[Dict[str, Any]]) -> str:
     ast_map = get_annual_items("Assets")
     liab_map = get_annual_items("Liabilities")
     eq_map = get_annual_items("StockholdersEquity")
+    cet1_map = get_annual_items("CommonEquityTier1CapitalRatio")
 
-    all_years = sorted(list(set(list(rev_map.keys()) + list(ni_map.keys()) + list(ast_map.keys()))), reverse=True)
+    # Explicitly target requested 3 fiscal years (FY2024, FY2023, FY2022)
+    target_years = [2024, 2023, 2022]
+    all_years = sorted(list(set(target_years + list(rev_map.keys()) + list(ni_map.keys()) + list(ast_map.keys()))), reverse=True)
 
-    if all_years:
-        lines.append("### Annual Financial Performance Summary")
-        lines.append("| Fiscal Year | Form | Revenue | Net Income | Total Assets | Total Liabilities | Filed Date |")
-        lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
+    lines.append("### Annual Financial Performance Summary (Last 3 Fiscal Years)")
+    lines.append("| Fiscal Year | Form | Revenue | Net Income | Total Assets | Total Liabilities | CET1 Ratio | Filed Date |")
+    lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
 
-        for yr in all_years[:5]:
-            r_item = rev_map.get(yr, {})
-            ni_item = ni_map.get(yr, {})
-            ast_item = ast_map.get(yr, {})
-            liab_item = liab_map.get(yr, {})
+    for yr in all_years[:4]:
+        r_item = rev_map.get(yr, {})
+        ni_item = ni_map.get(yr, {})
+        ast_item = ast_map.get(yr, {})
+        liab_item = liab_map.get(yr, {})
+        cet1_item = cet1_map.get(yr, {})
 
-            form = r_item.get("form") or ni_item.get("form") or "10-K"
-            filed = r_item.get("filed") or ni_item.get("filed") or "N/A"
+        form = r_item.get("form") or ni_item.get("form") or "10-K"
+        filed = r_item.get("filing_date") or r_item.get("filed") or ni_item.get("filing_date") or "N/A"
 
-            rev_val = f"${r_item['val'] / 1e9:,.2f}B" if r_item.get("val") else "N/A"
-            ni_val = f"${ni_item['val'] / 1e9:,.2f}B" if ni_item.get("val") else "N/A"
-            ast_val = f"${ast_item['val'] / 1e9:,.2f}B" if ast_item.get("val") else "N/A"
-            liab_val = f"${liab_item['val'] / 1e9:,.2f}B" if liab_item.get("val") else "N/A"
+        rev_val = f"${r_item['value'] / 1e9:,.2f}B" if r_item.get("value") else ("N/A" if yr in rev_map else "Could not be retrieved")
+        ni_val = f"${ni_item['value'] / 1e9:,.2f}B" if ni_item.get("value") else ("N/A" if yr in ni_map else "Could not be retrieved")
+        ast_val = f"${ast_item['value'] / 1e9:,.2f}B" if ast_item.get("value") else ("N/A" if yr in ast_map else "Could not be retrieved")
+        liab_val = f"${liab_item['value'] / 1e9:,.2f}B" if liab_item.get("value") else ("N/A" if yr in liab_map else "Could not be retrieved")
 
-            lines.append(f"| FY{yr} | {form} | {rev_val} | {ni_val} | {ast_val} | {liab_val} | {filed} |")
+        # CET1 ratio formatting
+        if cet1_item.get("value"):
+            c_val = cet1_item["value"]
+            cet1_val = f"{c_val * 100:.1f}%" if c_val < 1.0 else f"{c_val:.1f}%"
+        else:
+            cet1_val = "Unverified"
 
+        lines.append(f"| FY{yr} | {form} | {rev_val} | {ni_val} | {ast_val} | {liab_val} | {cet1_val} | {filed} |")
+
+    lines.append("")
+
+    # Display completeness notices if missing fiscal years
+    missing_yrs = [yr for yr, status in completeness.items() if status == "missing"]
+    if missing_yrs:
+        lines.append(f"> **Period Completeness Notice**: Fiscal period data for `{', '.join(missing_yrs)}` could not be retrieved from SEC EDGAR filings.")
         lines.append("")
 
     return "\n".join(lines)

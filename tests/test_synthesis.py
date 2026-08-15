@@ -1,35 +1,36 @@
-"""Unit tests for Multi-Source Synthesis Engine and Conflict Resolution."""
+"""Unit tests for Synthesis Engine and Conflict Resolution."""
 
 import pytest
 from agent.synthesis.conflict_resolution import (
     EvidenceItem,
+    Conflict,
     ConflictDetector,
-    extract_numeric_metrics,
     calculate_evidence_weight
 )
 from agent.synthesis.engine import SynthesisEngine
-from agent.tools.registry import default_registry
 
 
-def test_synthesize_findings_tool_registered():
-    """Test that synthesize_findings tool is registered in default_registry."""
-    assert default_registry.has_tool("synthesize_findings")
+def test_calculate_evidence_weight():
+    """Test weight calculation favoring SEC statutory filings over secondary transcripts and notes."""
+    item_sec = EvidenceItem(
+        text="FY2024 Revenue was $158.0B.",
+        source="SEC EDGAR 10-K",
+        source_type="sec_filing",
+        confidence=1.0
+    )
 
+    item_transcript = EvidenceItem(
+        text="FY2024 Revenue was $158.0B.",
+        source="Q4 Earnings Transcript",
+        source_type="earnings_transcript",
+        confidence=1.0
+    )
 
-def test_extract_numeric_metrics():
-    """Test metric extraction for dollar values and percentages."""
-    text = "Revenue of $391.0B and Net Income was $97.0 billion. ROE was 16.8%."
-    metrics = extract_numeric_metrics(text)
-    
-    names = [m[0] for m in metrics]
-    vals = [m[1] for m in metrics]
+    weight_sec = calculate_evidence_weight(item_sec)
+    weight_tr = calculate_evidence_weight(item_transcript)
 
-    assert "revenue" in names
-    assert 391000000000.0 in vals
-    assert "net income" in names
-    assert 97000000000.0 in vals
-    assert "roe" in names
-    assert 16.8 in vals
+    assert weight_sec > weight_tr
+    assert weight_sec >= 0.95
 
 
 def test_conflict_detection_and_resolution():
@@ -79,7 +80,6 @@ def test_unresolved_conflict_surfaced():
 
     assert len(conflicts) == 1
     c = conflicts[0]
-    # Equal weight sources should NOT silently drop one side, but surface as unresolved
     assert c.resolved is False
     assert c.winning_evidence_id is None
     assert "UNRESOLVED CONFLICT SURFACED" in c.reasoning
@@ -115,5 +115,4 @@ def test_synthesis_engine_pipeline():
 
     assert len(result.consolidated_claims) == 3
     assert len(result.conflicts_found) == 1
-    assert "CONSOLIDATED EVIDENCE" in result.summary_narrative
-    assert "DISCREPANCIES & CONFLICT RESOLUTION" in result.summary_narrative
+    assert "Synthesized research report" in result.summary_narrative

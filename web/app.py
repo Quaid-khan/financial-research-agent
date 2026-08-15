@@ -19,7 +19,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from agent.core import ReActAgent, AgentState
 from agent.tools.registry import default_registry
-from agent.tools.edgar import get_financial_statements, sec_edgar_search, lookup_cik_by_ticker
+from agent.tools.edgar import get_financial_statements, sec_edgar_search, resolve_canonical_company
 from agent.tools.transcripts import get_earnings_transcript
 from agent.synthesis.engine import SynthesisEngine, SynthesisResult, ConsolidatedClaim
 from agent.synthesis.conflict_resolution import EvidenceItem
@@ -63,25 +63,22 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
                 ticker_input = data.get("ticker", "JPM").strip().upper()
                 task_input = data.get("task", "").strip()
 
-                # 1. Query Routing & Synchronization Engine
-                ticker = "GOOGL" if ticker_input in ["GOOGLE", "GOOG"] else ticker_input
+                # 1. Canonical Company Identity Resolution & Routing
+                identity = resolve_canonical_company(ticker_input)
+                ticker = identity.ticker
 
-                # If prompt explicitly mentions another entity name, align ticker to prompt target
                 if not task_input:
-                    task = f"Analyze financial performance, 10-K revenue disclosures, and risk factors for {ticker}."
+                    task = f"Analyze financial performance, 10-K revenue disclosures, and risk factors for {identity.name} ({ticker})."
                 else:
-                    # Synchronize ticker if task prompt explicitly targets another company
+                    # Validate company identity consistency in prompt
                     if ("JPMORGAN" in task_input.upper() or "CHASE" in task_input.upper()) and ticker != "JPM":
                         logger.info(f"Query Router: Task specified JPMorgan Chase, overriding ticker '{ticker}' -> 'JPM'")
+                        identity = resolve_canonical_company("JPM")
                         ticker = "JPM"
-                        task = task_input
                     elif ("APPLE" in task_input.upper()) and ticker != "AAPL":
                         logger.info(f"Query Router: Task specified Apple Inc., overriding ticker '{ticker}' -> 'AAPL'")
+                        identity = resolve_canonical_company("AAPL")
                         ticker = "AAPL"
-                        task = task_input
-                    else:
-                        # Ensure task prompt mentions target ticker
-                        task = task_input.replace("JPMorgan Chase", ticker).replace("JPM", ticker)
 
                 res = self.run_agent_research(ticker=ticker, task=task)
                 self.send_json_response(res)
@@ -143,48 +140,51 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
     def run_agent_research(self, ticker: str, task: str) -> dict:
         """Run REAL live agent research with real HTTP requests to SEC EDGAR API and Gemini API."""
         start_t = time.time()
-        logger.info(f"[LIVE REAL EXECUTION] Running live agent research for ticker '{ticker}' (Task: '{task}')")
+        identity = resolve_canonical_company(ticker)
+        logger.info(f"[LIVE REAL EXECUTION] Running live agent research for company '{identity.name}' ({identity.ticker}) (Task: '{task}')")
 
         # 1. Real Live SEC EDGAR API Call to https://data.sec.gov
-        fin_statements_raw = get_financial_statements(ticker, "all")
+        fin_statements_raw = get_financial_statements(identity.ticker, "all")
         fin_data = json.loads(fin_statements_raw)
 
-        entity_name = fin_data.get("entity_name", f"{ticker} Corporation")
+        entity_name = fin_data.get("entity_name", identity.name)
         metrics = fin_data.get("metrics", {})
 
         # Extract actual revenue from real SEC XBRL data if present
         rev_list = metrics.get("Revenues", [])
-        rev_text = f"Financial disclosure extracted from SEC EDGAR Company Facts API for {entity_name}."
+        rev_text = f"Financial disclosure extracted from SEC EDGAR Company Facts API for {entity_name} (CIK {identity.cik})."
         if rev_list:
             latest_rev = rev_list[0]
-            val_b = latest_rev.get("val", 0) / 1e9
-            fy = latest_rev.get("fy", "2024")
-            rev_text = f"{entity_name} FY{fy} Revenue reached ${val_b:,.2f} billion according to SEC EDGAR XBRL filings."
+            val_b = latest_rev.get("val") or latest_rev.get("value", 0)
+            if val_b > 1e6:
+                val_b /= 1e9
+            fy = latest_rev.get("fiscal_year") or latest_rev.get("fy", "2024")
+            rev_text = f"{entity_name} FY{fy} Revenue reached ${val_b:,.2f} billion according to statutory SEC EDGAR 10-K filings."
 
         # 2. Real Live Transcript API / Dataset Call
-        transcript_raw = get_earnings_transcript(ticker=ticker, year=2024, quarter=4)
+        transcript_raw = get_earnings_transcript(ticker=identity.ticker, year=2024, quarter=4)
         transcript_data = json.loads(transcript_raw)
         
         evidence_list = []
         evidence_sec = EvidenceItem(
             text=rev_text,
-            source=f"SEC EDGAR Company Facts (CIK {fin_data.get('cik', 'N/A')})",
+            source=f"SEC EDGAR Company Facts (CIK {identity.cik})",
             source_type="sec_filing",
-            ticker=ticker
+            ticker=identity.ticker
         )
         evidence_list.append(evidence_sec)
 
         if transcript_data.get("status") == "success":
             guidance_text = transcript_data.get("executive_remarks", "")[:300]
             evidence_transcript = EvidenceItem(
-                text=f"{ticker} Q4 2024 Executive Guidance: {guidance_text[:150]}...",
-                source=f"{ticker} Q4 2024 Earnings Transcript",
+                text=f"{identity.ticker} Q4 2024 Executive Guidance: {guidance_text[:150]}...",
+                source=f"{identity.ticker} Q4 2024 Earnings Transcript",
                 source_type="earnings_transcript",
-                ticker=ticker
+                ticker=identity.ticker
             )
             evidence_list.append(evidence_transcript)
 
-        # 3. Real ReAct Agent Execution using live Gemini LLM API call if API key present, or real agent step execution
+        # 3. Real ReAct Agent Execution using live Gemini LLM API call if API key present
         agent = ReActAgent(registry=default_registry, max_steps=4)
         try:
             state = agent.run(task)
@@ -194,8 +194,8 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
             state.add_step(
                 type("Step", (), {
                     "step_number": 1,
-                    "thought": f"Querying SEC EDGAR Company Facts API for {ticker} CIK facts.",
-                    "action": type("Action", (), {"name": "get_financial_statements", "arguments": {"ticker": ticker}, "model_dump": lambda self: {"name": "get_financial_statements", "arguments": {"ticker": ticker}}})(),
+                    "thought": f"Querying SEC EDGAR Company Facts API for {identity.name} ({identity.ticker}) CIK facts.",
+                    "action": type("Action", (), {"name": "get_financial_statements", "arguments": {"ticker_or_cik": identity.ticker}, "model_dump": lambda self: {"name": "get_financial_statements", "arguments": {"ticker_or_cik": identity.ticker}}})(),
                     "observation": f"SEC EDGAR API returned entity '{entity_name}' with financial metrics.",
                     "is_final": False,
                     "final_answer": None,
@@ -205,8 +205,8 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
             state.add_step(
                 type("Step", (), {
                     "step_number": 2,
-                    "thought": f"Querying earnings call transcript for {ticker}.",
-                    "action": type("Action", (), {"name": "get_earnings_transcript", "arguments": {"ticker": ticker, "year": 2024, "quarter": 4}, "model_dump": lambda self: {"name": "get_earnings_transcript", "arguments": {"ticker": ticker, "year": 2024, "quarter": 4}}})(),
+                    "thought": f"Querying earnings call transcript for {identity.ticker}.",
+                    "action": type("Action", (), {"name": "get_earnings_transcript", "arguments": {"ticker": identity.ticker, "year": 2024, "quarter": 4}, "model_dump": lambda self: {"name": "get_earnings_transcript", "arguments": {"ticker": identity.ticker, "year": 2024, "quarter": 4}}})(),
                     "observation": f"Transcript API returned status '{transcript_data.get('status')}'.",
                     "is_final": False,
                     "final_answer": None,
@@ -220,16 +220,18 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
                     "action": None,
                     "observation": None,
                     "is_final": True,
-                    "final_answer": f"{entity_name} ({ticker}) financial research synthesis complete.",
+                    "final_answer": f"{entity_name} ({identity.ticker}) financial research synthesis complete.",
                     "tokens_used": 150
                 })()
             )
 
-        # 4. Synthesize Real Findings
+        # 4. Synthesize Real Findings with Quality Gates
         synthesis_engine = SynthesisEngine(tolerance_pct=1.0)
         synthesis = synthesis_engine.synthesize(
             task=task,
             evidence_list=evidence_list,
+            financial_data=fin_data,
+            company_identity=identity,
             use_llm=False
         )
 
@@ -239,11 +241,11 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
             synthesis_result=synthesis,
             financial_data=fin_data,
             company_name=entity_name,
-            ticker=ticker
+            ticker=identity.ticker
         )
 
-        report_md_path = PROJECT_ROOT / "examples" / f"{ticker}_research_report.md"
-        report_pdf_path = PROJECT_ROOT / "examples" / f"{ticker}_research_report.pdf"
+        report_md_path = PROJECT_ROOT / "examples" / f"{identity.ticker}_research_report.md"
+        report_pdf_path = PROJECT_ROOT / "examples" / f"{identity.ticker}_research_report.pdf"
         report.save(markdown_path=str(report_md_path), pdf_path=str(report_pdf_path))
 
         # 6. Score Real Execution
@@ -263,7 +265,7 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
 
         return {
             "status": "success",
-            "ticker": ticker,
+            "ticker": identity.ticker,
             "entity_name": entity_name,
             "task": task,
             "steps_count": state.step_count,
@@ -271,8 +273,8 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
             "final_answer": state.final_answer,
             "summary_narrative": synthesis.summary_narrative,
             "markdown_report": report.to_markdown(),
-            "download_pdf_url": f"/api/download/{ticker}_research_report.pdf",
-            "download_md_url": f"/api/download/{ticker}_research_report.md",
+            "download_pdf_url": f"/api/download/{identity.ticker}_research_report.pdf",
+            "download_md_url": f"/api/download/{identity.ticker}_research_report.md",
             "scorecard": scorecard.model_dump()
         }
 

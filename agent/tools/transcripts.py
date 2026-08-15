@@ -1,23 +1,62 @@
-"""Earnings Call Transcript Collection Tool for Financial Research Agent.
+"""Earnings Call Transcript Collection & Validation Engine.
 
-Fetches and parses earnings call transcripts, segmenting output into Executive Prepared
-Remarks (CEO/CFO guidance) and Analyst Q&A sections. Fails visibly when authentic transcripts are unavailable.
+Fetches, validates, and parses earnings call transcripts, segmenting output into Executive Prepared
+Remarks and Analyst Q&A sections. Rejects unvalidated or synthetic junk content.
 """
 
 import re
 import json
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 import requests
 
 from agent.config import get_settings
 from agent.tools.registry import default_registry
 from agent.tools.cache import default_cache
+from agent.tools.edgar import resolve_canonical_company
 
 logger = logging.getLogger("financial_agent.transcripts")
 
-# Tickers with pre-verified authentic sample transcripts for benchmarking
-VERIFIED_TRANSCRIPT_TICKERS = {"JPM", "BAC"}
+
+def validate_transcript_content(raw_text: str, ticker: str, year: int, quarter: int) -> Tuple[bool, str]:
+    """Validate transcript text for non-empty content, minimum length, speaker dialogue, and company identity.
+    
+    Returns:
+        (is_valid, reason_str)
+    """
+    if not raw_text or not raw_text.strip():
+        return False, "Transcript content is empty."
+
+    text_clean = raw_text.strip()
+    if len(text_clean) < 300:
+        return False, f"Transcript length ({len(text_clean)} chars) is below minimum threshold (300 chars)."
+
+    # Check for repeated header junk / placeholder text ratio
+    header_junk_pattern = r"(=+|-+|_+|\*{3,}|TRANSCRIPT|EARNINGS CALL|EXECUTIVE PREPARED REMARKS)"
+    matches = re.findall(header_junk_pattern, text_clean, re.IGNORECASE)
+    if len(matches) > 12:
+        return False, "Transcript contains excessive repeated header markers and formatting junk."
+
+    # Check for speaker dialogue or Q&A tags
+    speaker_pattern = r"(CEO|CFO|Executive|Analyst|Question|Answer|Q&A|Operator|Remarks)"
+    speaker_matches = re.findall(speaker_pattern, text_clean, re.IGNORECASE)
+    if len(speaker_matches) < 2:
+        return False, "Transcript lacks verified speaker dialogue or Q&A tags."
+
+    # Check for placeholder indicators
+    placeholder_terms = ["placeholder text", "sample transcript text", "lorem ipsum", "unverified text"]
+    for p_term in placeholder_terms:
+        if p_term in text_clean.lower():
+            return False, f"Transcript contains synthetic placeholder term '{p_term}'."
+
+    # Verify company identity in text
+    identity = resolve_canonical_company(ticker)
+    company_keywords = [identity.ticker.upper(), identity.name.upper().split()[0]]
+    has_company_ref = any(kw in text_clean.upper() for kw in company_keywords if len(kw) > 2)
+    if not has_company_ref:
+        return False, f"Transcript content does not reference company identity '{identity.name}' or ticker '{identity.ticker}'."
+
+    return True, "Valid authentic transcript."
 
 
 def parse_and_segment_transcript(raw_transcript_text: str) -> Dict[str, str]:
@@ -52,35 +91,12 @@ def parse_and_segment_transcript(raw_transcript_text: str) -> Dict[str, str]:
     }
 
 
-def generate_structured_fallback_transcript(ticker: str, year: int, quarter: int) -> str:
-    """Generate structured transcript for verified benchmark tickers."""
-    t_upper = ticker.upper()
-    return f"""================================================================================
-{t_upper} Q{quarter} {year} EARNINGS CALL TRANSCRIPT
-================================================================================
-
-[EXECUTIVE PREPARED REMARKS - CEO & CFO]
-CEO Remarks:
-"Thank you for joining our Q{quarter} {year} earnings call. {t_upper} delivered strong operational performance this quarter. Revenue performance and non-interest income demonstrated resilient growth across core operating segments."
-
-CFO Financial Review:
-"Turning to our financial details: Net income reached $12.4B for the quarter. Return on Tangible Common Equity (ROTCE) was 19.5%. Our balance sheet capital position remains firm, providing capacity for continued capital deployment."
-
-[ANALYST QUESTION & ANSWER SESSION]
-Analyst:
-"Could you elaborate on capital allocation expectations for the upcoming fiscal year?"
-
-CFO Response:
-"Our capital priorities remain disciplined: supporting organic business growth, maintaining strong liquidity reserves, and returning excess capital to shareholders."
-"""
-
-
 # ==============================================================================
 # TOOL 4: get_earnings_transcript
 # ==============================================================================
 @default_registry.tool(
     name="get_earnings_transcript",
-    description="Fetch and parse structured earnings call transcripts (segmented into CEO/CFO remarks and Analyst Q&A).",
+    description="Fetch and parse structured earnings call transcripts (segmented into CEO/CFO remarks and Analyst Q&A). Validates transcript content.",
     parameters_schema={
         "type": "object",
         "properties": {
@@ -94,16 +110,17 @@ CFO Response:
 def get_earnings_transcript(ticker: str, year: int = 2024, quarter: int = 4) -> str:
     """Fetch earnings call transcript for ticker, year, and quarter.
     
-    Fails visibly with status='not_found' if authentic transcript is unavailable.
+    Validates transcript content. Fails visibly with status='not_found' or status='invalid' if unverified.
     """
-    t_clean = ticker.strip().upper()
+    identity = resolve_canonical_company(ticker)
+    t_clean = identity.ticker
     cache_key = f"transcript_{t_clean}_{year}_Q{quarter}"
     
     cached_transcript = default_cache.get(cache_key)
     if cached_transcript:
         return cached_transcript
 
-    # Try calling Financial Modeling Prep API if key is set
+    # Call Financial Modeling Prep API if key is set
     settings = get_settings()
     fmp_key = settings.FMP_API_KEY.get_secret_value() if hasattr(settings, "FMP_API_KEY") and settings.FMP_API_KEY else ""
 
@@ -115,43 +132,32 @@ def get_earnings_transcript(ticker: str, year: int = 2024, quarter: int = 4) -> 
                 data = resp.json()
                 if isinstance(data, list) and len(data) > 0 and "content" in data[0]:
                     raw_text = data[0]["content"]
-                    segmented = parse_and_segment_transcript(raw_text)
-                    out_data = {
-                        "status": "success",
-                        "ticker": t_clean,
-                        "year": year,
-                        "quarter": quarter,
-                        "source": "financial_modeling_prep",
-                        "executive_remarks": segmented["executive_remarks"],
-                        "qa_session": segmented["qa_session"]
-                    }
-                    out_json = json.dumps(out_data, indent=2)
-                    default_cache.set(cache_key, out_json, ttl_seconds=86400 * 30)
-                    return out_json
+                    is_valid, val_reason = validate_transcript_content(raw_text, t_clean, year, quarter)
+                    if is_valid:
+                        segmented = parse_and_segment_transcript(raw_text)
+                        out_data = {
+                            "status": "success",
+                            "company_identity": identity.to_dict(),
+                            "ticker": t_clean,
+                            "year": year,
+                            "quarter": quarter,
+                            "source": "financial_modeling_prep",
+                            "executive_remarks": segmented["executive_remarks"],
+                            "qa_session": segmented["qa_session"]
+                        }
+                        out_json = json.dumps(out_data, indent=2)
+                        default_cache.set(cache_key, out_json, ttl_seconds=86400 * 30)
+                        return out_json
+                    else:
+                        logger.warning(f"Transcript validation failed for {t_clean}: {val_reason}")
         except Exception as err:
             logger.warning(f"FMP API transcript fetch error for {t_clean}: {err}")
 
-    # Verified benchmark tickers fallback
-    if t_clean in VERIFIED_TRANSCRIPT_TICKERS:
-        raw_fallback = generate_structured_fallback_transcript(t_clean, year, quarter)
-        segmented = parse_and_segment_transcript(raw_fallback)
-        out_data = {
-            "status": "success",
-            "ticker": t_clean,
-            "year": year,
-            "quarter": quarter,
-            "source": "verified_benchmark_dataset",
-            "executive_remarks": segmented["executive_remarks"],
-            "qa_session": segmented["qa_session"]
-        }
-        out_json = json.dumps(out_data, indent=2)
-        default_cache.set(cache_key, out_json, ttl_seconds=86400 * 30)
-        return out_json
-
-    # Fail visibly for unverified tickers without authentic transcript
+    # Fail visibly with status 'not_found' for unverified transcripts
     out_err = {
         "status": "not_found",
-        "message": f"No authentic earnings call transcript available for ticker {t_clean} Q{quarter} {year}.",
+        "company_identity": identity.to_dict(),
+        "message": f"Transcript could not be reliably verified for {identity.name} ({t_clean}) Q{quarter} {year} and was excluded from analysis.",
         "ticker": t_clean,
         "year": year,
         "quarter": quarter

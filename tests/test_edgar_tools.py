@@ -4,6 +4,7 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock
 
+from agent.tools.cache import default_cache
 from agent.tools.registry import default_registry
 from agent.tools.edgar import (
     sec_edgar_search,
@@ -12,6 +13,14 @@ from agent.tools.edgar import (
     lookup_cik_by_ticker,
     clean_html_xbrl_text
 )
+
+
+@pytest.fixture(autouse=True)
+def clear_cache_before_each_test():
+    """Wipe cache before each unit test to prevent mock cache collisions."""
+    default_cache.clear()
+    yield
+    default_cache.clear()
 
 
 @pytest.fixture
@@ -113,12 +122,12 @@ def test_sec_edgar_get_filing_success(mock_get, mock_sec_submissions_response):
 
     mock_get.side_effect = [mock_sub_resp, mock_doc_resp]
 
-    # Pass a unique ticker to avoid cache collision
-    res_str = sec_edgar_get_filing("TESTJPM", form_type="10-K", section="Item 7")
+    # Use JPM static ticker to avoid extra CIK mapping HTTP lookup
+    res_str = sec_edgar_get_filing("JPM", form_type="10-K", section="Item 7")
     res_data = json.loads(res_str)
 
     assert res_data["status"] == "success"
-    assert res_data["ticker"] == "TESTJPM"
+    assert res_data["ticker"] == "JPM"
     assert "Net Interest Income grew 15%" in res_data["content"]
 
 

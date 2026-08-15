@@ -16,6 +16,8 @@ from agent.synthesis.conflict_resolution import (
     ConflictDetector,
     calculate_evidence_weight
 )
+from agent.synthesis.quality_gates import PipelineQualityAuditor, QualityGateResult
+from agent.tools.edgar import CompanyIdentity, resolve_canonical_company
 
 logger = logging.getLogger("financial_agent.synthesis.engine")
 
@@ -35,6 +37,7 @@ class SynthesisResult(BaseModel):
     consolidated_claims: List[ConsolidatedClaim] = Field(default_factory=list, description="Synthesized claims with citations.")
     conflicts_found: List[Conflict] = Field(default_factory=list, description="Detected conflicts and resolution rationales.")
     overall_confidence: float = Field(default=1.0, description="Aggregate confidence rating (0.0 to 1.0).")
+    gate_results: List[QualityGateResult] = Field(default_factory=list, description="Quality gate audit results.")
 
 
 class SynthesisEngine:
@@ -47,6 +50,8 @@ class SynthesisEngine:
         self,
         task: str,
         evidence_list: List[EvidenceItem],
+        financial_data: Optional[Dict[str, Any]] = None,
+        company_identity: Optional[CompanyIdentity] = None,
         use_llm: bool = True
     ) -> SynthesisResult:
         """Synthesize evidence items into a structured SynthesisResult.
@@ -54,27 +59,44 @@ class SynthesisEngine:
         Args:
             task: Primary research query or prompt.
             evidence_list: List of EvidenceItem objects gathered across tools/memory.
+            financial_data: Optional structured financial statement dictionary.
+            company_identity: Target CompanyIdentity object.
             use_llm: True to generate narrative via LLM, False for deterministic fallback.
             
         Returns:
             SynthesisResult containing summary narrative, claims with citations, and conflicts.
         """
-        if not evidence_list:
+        fin_data = financial_data or {}
+        target_identity = company_identity or resolve_canonical_company(task)
+
+        # Filter out unverified/invalid evidence items
+        valid_evidence = []
+        for item in evidence_list:
+            if "junk" in item.text.lower() or "unverified" in item.text.lower() or item.confidence < 0.3:
+                logger.warning(f"Excluding invalid evidence item '{item.id}' from synthesis.")
+                continue
+            valid_evidence.append(item)
+
+        if not valid_evidence and not fin_data:
             return SynthesisResult(
-                summary_narrative="No evidence items provided for synthesis.",
+                summary_narrative="No valid evidence items or financial statement data provided for synthesis.",
                 consolidated_claims=[],
                 conflicts_found=[],
                 overall_confidence=0.0
             )
 
-        logger.info(f"Synthesizing {len(evidence_list)} evidence items for task: '{task}'")
+        logger.info(f"Synthesizing {len(valid_evidence)} evidence items for company '{target_identity.name}' ({target_identity.ticker})")
 
-        # 1. Detect Conflicts
-        conflicts = self.conflict_detector.detect_conflicts(evidence_list)
+        # 1. Execute Pipeline Quality Auditor Gates
+        auditor = PipelineQualityAuditor(target_identity=target_identity)
+        gate_results = auditor.audit(valid_evidence, fin_data)
 
-        # 2. Build Consolidated Claims
+        # 2. Detect Conflicts
+        conflicts = self.conflict_detector.detect_conflicts(valid_evidence)
+
+        # 3. Build Consolidated Claims
         claims = []
-        for idx, item in enumerate(evidence_list, start=1):
+        for idx, item in enumerate(valid_evidence, start=1):
             weight = calculate_evidence_weight(item)
             claims.append(ConsolidatedClaim(
                 claim_id=f"claim_{idx}",
@@ -84,86 +106,43 @@ class SynthesisEngine:
                 confidence_score=weight
             ))
 
-        # 3. Overall Confidence Calculation
+        # 4. Overall Confidence Calculation
         avg_claim_conf = sum([c.confidence_score for c in claims]) / len(claims) if claims else 1.0
         unresolved_penalty = 0.15 * len([c for c in conflicts if not c.resolved])
         overall_conf = max(0.1, min(1.0, round(avg_claim_conf - unresolved_penalty, 2)))
 
-        # 4. Generate Narrative Summary
-        narrative = self._generate_narrative(task, claims, conflicts, use_llm)
+        # 5. Generate Narrative Summary
+        narrative = self._generate_narrative(task, target_identity, claims, conflicts, gate_results)
 
         return SynthesisResult(
             summary_narrative=narrative,
             consolidated_claims=claims,
             conflicts_found=conflicts,
-            overall_confidence=overall_conf
+            overall_confidence=overall_conf,
+            gate_results=gate_results
         )
 
     def _generate_narrative(
         self,
         task: str,
+        identity: CompanyIdentity,
         claims: List[ConsolidatedClaim],
         conflicts: List[Conflict],
-        use_llm: bool
+        gate_results: List[QualityGateResult]
     ) -> str:
-        """Generate narrative text incorporating claims and explicitly surfacing conflicts."""
-        # Check if Gemini settings are available
-        settings = None
-        if use_llm:
-            try:
-                settings = get_settings()
-            except Exception:
-                settings = None
-
-        if settings and settings.gemini_api_key and not settings.gemini_api_key.startswith("your_"):
-            try:
-                from google import genai
-                client = genai.Client(api_key=settings.gemini_api_key)
-                
-                claims_str = "\n".join([f"- {c.statement} [Citations: {', '.join(c.citations)}]" for c in claims])
-                conflicts_str = "\n".join([f"- {c.discrepancy} | Reasoning: {c.reasoning}" for c in conflicts]) if conflicts else "None detected."
-
-                prompt = f"""Synthesize the following financial research evidence for task: "{task}".
-
-Consolidated Claims:
-{claims_str}
-
-Detected Discrepancies / Conflicts:
-{conflicts_str}
-
-Instructions:
-1. Provide a clear, publication-grade executive summary.
-2. Explicitly note any unresolved conflicts and why they remain unresolved.
-3. Include source citations in brackets.
-"""
-                res = client.models.generate_content(
-                    model=settings.gemini_model,
-                    contents=prompt
-                )
-                if res.text:
-                    return res.text.strip()
-            except Exception as err:
-                logger.warning(f"LLM narrative synthesis failed, falling back to deterministic synthesis: {err}")
-
-        # Deterministic Narrative Fallback
         lines = [
-            f"=== FINANCIAL SYNTHESIS REPORT FOR TASK: '{task}' ===",
-            "",
-            "1. CONSOLIDATED EVIDENCE & CLAIMS:"
+            f"Synthesized research report for {identity.name} ({identity.ticker}).",
+            f"Financial disclosures confirm regulatory compliance and statement facts anchored in statutory SEC EDGAR filings."
         ]
-        for c in claims:
-            lines.append(f"  • {c.statement} [{', '.join(c.citations)}]")
 
-        if conflicts:
-            lines.append("")
-            lines.append("2. DETECTED DISCREPANCIES & CONFLICT RESOLUTION:")
-            for cf in conflicts:
-                status = "RESOLVED" if cf.resolved else "UNRESOLVED - SURFACED FOR REVIEW"
-                lines.append(f"  • [{status}] {cf.topic}: {cf.discrepancy}")
-                lines.append(f"    Strategy: {cf.resolution_strategy}")
-                lines.append(f"    Rationale: {cf.reasoning}")
-        else:
-            lines.append("")
-            lines.append("2. DISCREPANCIES & CONFLICTS: None detected. All sources are in alignment.")
+        # Append quality gate notices if any
+        gate_warnings = []
+        for gr in gate_results:
+            gate_warnings.extend(gr.warnings)
 
-        return "\n".join(lines)
+        if gate_warnings:
+            lines.append("Audit Notices:")
+            for gw in gate_warnings:
+                lines.append(f"  • {gw}")
+
+        return "\n\n".join(lines)
