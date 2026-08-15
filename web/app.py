@@ -12,6 +12,7 @@ import logging
 import urllib.parse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
+from typing import Any
 
 # Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -29,6 +30,22 @@ from eval.evaluator import Evaluator
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 logger = logging.getLogger("financial_agent.web")
 logging.basicConfig(level=logging.INFO)
+
+
+def safe_num(val: Any, default: Any = 0.0) -> Any:
+    """Safely extract a float number from int, float, or dict containing numeric value/val keys."""
+    if val is None:
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, dict):
+        v = val.get("value") if val.get("value") is not None else val.get("val")
+        if v is not None and isinstance(v, (int, float)):
+            return float(v)
+    try:
+        return float(str(val))
+    except (ValueError, TypeError):
+        return default
 
 
 class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
@@ -70,7 +87,6 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
                 if not task_input:
                     task = f"Analyze financial performance, 10-K revenue disclosures, and risk factors for {identity.name} ({ticker})."
                 else:
-                    # Validate company identity consistency in prompt
                     if ("JPMORGAN" in task_input.upper() or "CHASE" in task_input.upper()) and ticker != "JPM":
                         logger.info(f"Query Router: Task specified JPMorgan Chase, overriding ticker '{ticker}' -> 'JPM'")
                         identity = resolve_canonical_company("JPM")
@@ -155,11 +171,14 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
         rev_text = f"Financial disclosure extracted from SEC EDGAR Company Facts API for {entity_name} (CIK {identity.cik})."
         if rev_list:
             latest_rev = rev_list[0]
-            val_b = latest_rev.get("val") or latest_rev.get("value", 0)
+            val_raw = latest_rev.get("val") if latest_rev.get("val") is not None else latest_rev.get("value")
+            val_b = safe_num(val_raw, default=0.0)
             if val_b > 1e6:
                 val_b /= 1e9
-            fy = latest_rev.get("fiscal_year") or latest_rev.get("fy", "2024")
-            rev_text = f"{entity_name} FY{fy} Revenue reached ${val_b:,.2f} billion according to statutory SEC EDGAR 10-K filings."
+            fy_raw = latest_rev.get("fiscal_year") if latest_rev.get("fiscal_year") is not None else latest_rev.get("fy", "2024")
+            fy = safe_num(fy_raw, default=2024)
+            fy_str = int(fy) if isinstance(fy, float) else fy
+            rev_text = f"{entity_name} FY{fy_str} Revenue reached ${val_b:,.2f} billion according to statutory SEC EDGAR 10-K filings."
 
         # 2. Real Live Transcript API / Dataset Call
         transcript_raw = get_earnings_transcript(ticker=identity.ticker, year=2024, quarter=4)
@@ -250,7 +269,8 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
 
         # 6. Score Real Execution
         evaluator = Evaluator()
-        scorecard = evaluator.evaluate(state=state, report=report, duration_seconds=round(time.time() - start_t, 2))
+        duration_sec = round(time.time() - start_t, 2)
+        scorecard = evaluator.evaluate(state=state, report=report, duration_seconds=duration_sec)
 
         steps_trace = []
         for s in state.scratchpad:

@@ -12,6 +12,22 @@ TECH_TICKERS = {"AAPL", "MSFT", "GOOGL", "GOOG", "NVDA", "AMZN", "META", "TSLA",
 FINANCE_TICKERS = {"JPM", "BAC", "WFC", "C", "GS", "MS", "AXP", "BLK"}
 
 
+def safe_num(val: Any, default: Any = None) -> Optional[float]:
+    """Safely extract a float number from int, float, or dict containing numeric value/val keys."""
+    if val is None:
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, dict):
+        v = val.get("value") if val.get("value") is not None else val.get("val")
+        if v is not None and isinstance(v, (int, float)):
+            return float(v)
+    try:
+        return float(str(val))
+    except (ValueError, TypeError):
+        return default
+
+
 def render_financial_tables(financial_data: Optional[Dict[str, Any]]) -> str:
     """Render auto-generated Markdown tables from structured XBRL financial statement data.
     
@@ -29,13 +45,17 @@ def render_financial_tables(financial_data: Optional[Dict[str, Any]]) -> str:
         raw_items = metrics.get(concept_key, [])
         annual_map = {}
         for item in raw_items:
-            fy = item.get("fiscal_year") or item.get("fy")
+            fy_raw = item.get("fiscal_year") if item.get("fiscal_year") is not None else item.get("fy")
+            fy_num = safe_num(fy_raw, default=None)
+            fy = int(fy_num) if fy_num is not None else None
+
             form = str(item.get("form") or "").upper()
             fp = str(item.get("fiscal_period") or item.get("fp") or "").upper()
 
             is_annual = fp == "FY" or "10-K" in form or form == "NONE" or not fp
             if is_annual and fy is not None:
-                if fy not in annual_map or (item.get("value") and not annual_map[fy].get("value")):
+                v_check = safe_num(item.get("value") if item.get("value") is not None else item.get("val"))
+                if fy not in annual_map or (v_check is not None and safe_num(annual_map[fy].get("value")) is None):
                     annual_map[fy] = item
         return annual_map
 
@@ -46,7 +66,6 @@ def render_financial_tables(financial_data: Optional[Dict[str, Any]]) -> str:
     eq_map = get_annual_items("StockholdersEquity")
     cet1_map = get_annual_items("CommonEquityTier1CapitalRatio")
 
-    # Explicitly target requested 3 fiscal years (FY2024, FY2023, FY2022)
     target_years = [2024, 2023, 2022]
     all_years = sorted(list(set(target_years + list(rev_map.keys()) + list(ni_map.keys()) + list(ast_map.keys()))), reverse=True)
 
@@ -64,15 +83,21 @@ def render_financial_tables(financial_data: Optional[Dict[str, Any]]) -> str:
         form = r_item.get("form") or ni_item.get("form") or "10-K"
         filed = r_item.get("filing_date") or r_item.get("filed") or ni_item.get("filing_date") or "N/A"
 
-        rev_val = f"${r_item['value'] / 1e9:,.2f}B" if r_item.get("value") else ("N/A" if yr in rev_map else "Could not be retrieved")
-        ni_val = f"${ni_item['value'] / 1e9:,.2f}B" if ni_item.get("value") else ("N/A" if yr in ni_map else "Could not be retrieved")
-        ast_val = f"${ast_item['value'] / 1e9:,.2f}B" if ast_item.get("value") else ("N/A" if yr in ast_map else "Could not be retrieved")
-        liab_val = f"${liab_item['value'] / 1e9:,.2f}B" if liab_item.get("value") else ("N/A" if yr in liab_map else "Could not be retrieved")
+        # Safely extract numeric values
+        r_num = safe_num(r_item.get("value") if r_item.get("value") is not None else r_item.get("val"), default=None)
+        ni_num = safe_num(ni_item.get("value") if ni_item.get("value") is not None else ni_item.get("val"), default=None)
+        ast_num = safe_num(ast_item.get("value") if ast_item.get("value") is not None else ast_item.get("val"), default=None)
+        liab_num = safe_num(liab_item.get("value") if liab_item.get("value") is not None else liab_item.get("val"), default=None)
+
+        rev_val = f"${r_num / 1e9:,.2f}B" if r_num is not None else ("N/A" if yr in rev_map else "Could not be retrieved")
+        ni_val = f"${ni_num / 1e9:,.2f}B" if ni_num is not None else ("N/A" if yr in ni_map else "Could not be retrieved")
+        ast_val = f"${ast_num / 1e9:,.2f}B" if ast_num is not None else ("N/A" if yr in ast_map else "Could not be retrieved")
+        liab_val = f"${liab_num / 1e9:,.2f}B" if liab_num is not None else ("N/A" if yr in liab_map else "Could not be retrieved")
 
         # CET1 ratio formatting
-        if cet1_item.get("value"):
-            c_val = cet1_item["value"]
-            cet1_val = f"{c_val * 100:.1f}%" if c_val < 1.0 else f"{c_val:.1f}%"
+        c_num = safe_num(cet1_item.get("value") if cet1_item.get("value") is not None else cet1_item.get("val"), default=None)
+        if c_num is not None:
+            cet1_val = f"{c_num * 100:.1f}%" if c_num < 1.0 else f"{c_num:.1f}%"
         else:
             cet1_val = "Unverified"
 
@@ -80,7 +105,6 @@ def render_financial_tables(financial_data: Optional[Dict[str, Any]]) -> str:
 
     lines.append("")
 
-    # Display completeness notices if missing fiscal years
     missing_yrs = [yr for yr, status in completeness.items() if status == "missing"]
     if missing_yrs:
         lines.append(f"> **Period Completeness Notice**: Fiscal period data for `{', '.join(missing_yrs)}` could not be retrieved from SEC EDGAR filings.")
@@ -156,10 +180,12 @@ def render_markdown_report(
     overview = get_dynamic_company_overview(entity, ticker_clean, overview_text)
     risk_factors = get_dynamic_risk_factors(entity, ticker_clean, risk_factors_text)
 
+    conf_num = safe_num(synthesis_result.overall_confidence, default=1.0)
+
     lines = [
         f"# Institutional Financial Research Report: {entity} ({ticker_clean})",
         "",
-        f"**Ticker**: `{ticker_clean}` | **Synthesis Confidence Score**: `{synthesis_result.overall_confidence:.2f} / 1.0` | **Date**: August 2026",
+        f"**Ticker**: `{ticker_clean}` | **Synthesis Confidence Score**: `{conf_num:.2f} / 1.0` | **Date**: August 2026",
         "---",
         "",
         "## 1. Executive Summary",
@@ -176,8 +202,9 @@ def render_markdown_report(
 
     for idx, claim in enumerate(synthesis_result.consolidated_claims, start=1):
         citations_str = ", ".join(claim.citations) if claim.citations else "SEC Disclosures"
+        c_score = safe_num(claim.confidence_score, default=1.0)
         lines.append(f"{idx}. **{claim.statement}**")
-        lines.append(f"   *Citations: [{citations_str}] (Claim Confidence: {claim.confidence_score:.2f})*")
+        lines.append(f"   *Citations: [{citations_str}] (Claim Confidence: {c_score:.2f})*")
         lines.append("")
 
     lines.append("## 5. Risk Factors & Operational Sensitivities")

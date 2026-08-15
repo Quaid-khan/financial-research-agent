@@ -16,6 +16,22 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger("financial_agent.synthesis.conflict")
 
 
+def safe_num(val: Any, default: float = 0.0) -> float:
+    """Safely extract float number from int, float, or dict containing numeric value/val keys."""
+    if val is None:
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, dict):
+        v = val.get("value") if val.get("value") is not None else val.get("val")
+        if v is not None and isinstance(v, (int, float)):
+            return float(v)
+    try:
+        return float(str(val))
+    except (ValueError, TypeError):
+        return default
+
+
 class EvidenceItem(BaseModel):
     """Structured evidence item collected from a tool or memory retrieval."""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique evidence ID.")
@@ -41,13 +57,7 @@ class Conflict(BaseModel):
 
 
 def calculate_evidence_weight(item: EvidenceItem, now: Optional[float] = None) -> float:
-    """Calculate composite reliability weight for an evidence item.
-    
-    Factors:
-    1. Source Type Weight (50%): SEC filings = 1.0, Transcripts = 0.85, Memory/Notes = 0.70.
-    2. Recency Decay (30%): Half-life decay over time.
-    3. Self-reported Confidence (20%).
-    """
+    """Calculate composite reliability weight for an evidence item."""
     if now is None:
         now = time.time()
 
@@ -62,7 +72,8 @@ def calculate_evidence_weight(item: EvidenceItem, now: Optional[float] = None) -
     hours_elapsed = max(0.0, (now - item.timestamp) / 3600.0)
     recency_weight = math.exp(-0.002 * hours_elapsed)
 
-    composite = (0.50 * source_weight) + (0.30 * recency_weight) + (0.20 * item.confidence)
+    conf_num = safe_num(item.confidence, default=1.0)
+    composite = (0.50 * source_weight) + (0.30 * recency_weight) + (0.20 * conf_num)
     return round(composite, 4)
 
 
@@ -70,7 +81,6 @@ def extract_numeric_metrics(text: str) -> List[Tuple[str, float]]:
     """Extract metric names and associated numerical values from text using regex."""
     metrics = []
     
-    # Dollar amount patterns: e.g. $391B, $391.0 billion, $97,000,000,000
     dollar_pattern = r"(revenue|net income|assets|liabilities|operating income|income|sales)\s*(?:of|was|reached|stood at)?\s*\$?\s*([\d\.,]+)\s*(billion|million|B|M)?"
     for match in re.finditer(dollar_pattern, text, re.IGNORECASE):
         metric_name = match.group(1).lower().strip()
@@ -87,7 +97,6 @@ def extract_numeric_metrics(text: str) -> List[Tuple[str, float]]:
         except ValueError:
             continue
 
-    # Percentage patterns: e.g. ROE = 16.8%, Tier 1 ratio = 14.2%
     pct_pattern = r"(roe|rotce|tier 1|margin|ratio)\s*(?:of|=|was)?\s*([\d\.]+)\%"
     for match in re.finditer(pct_pattern, text, re.IGNORECASE):
         metric_name = match.group(1).lower().strip()
@@ -104,19 +113,13 @@ class ConflictDetector:
     """Detects and resolves contradictions among evidence items."""
 
     def __init__(self, tolerance_pct: float = 1.0) -> None:
-        """Initialize detector with numerical tolerance threshold (default 1.0%)."""
         self.tolerance_pct = tolerance_pct
 
     def detect_conflicts(self, evidence_list: List[EvidenceItem]) -> List[Conflict]:
-        """Scan evidence items for numerical, entity, or availability contradictions.
-        
-        Returns:
-            List of Conflict objects (both resolved and explicitly surfaced unresolved conflicts).
-        """
+        """Scan evidence items for numerical, entity, or availability contradictions."""
         conflicts = []
         n = len(evidence_list)
 
-        # 1. Inspect evidence items for ticker / entity mismatch if distinct tickers provided
         seen_tickers = set()
         for item in evidence_list:
             if item.ticker:
@@ -137,7 +140,6 @@ class ConflictDetector:
                 reasoning=f"UNRESOLVED CONFLICT SURFACED: Resolved to primary query target ticker '{item_a.ticker}'."
             ))
 
-        # 2. Inspect numeric metric discrepancies
         for i in range(n):
             for j in range(i + 1, n):
                 item_a = evidence_list[i]
@@ -149,15 +151,17 @@ class ConflictDetector:
                 for name_a, val_a in metrics_a:
                     for name_b, val_b in metrics_b:
                         if name_a in name_b or name_b in name_a:
-                            if val_a > 0 and val_b > 0:
-                                diff_pct = abs(val_a - val_b) / max(val_a, val_b) * 100.0
+                            v_a = safe_num(val_a)
+                            v_b = safe_num(val_b)
+                            if v_a > 0 and v_b > 0:
+                                diff_pct = abs(v_a - v_b) / max(v_a, v_b) * 100.0
                                 if diff_pct > self.tolerance_pct:
                                     conflict = self._resolve_conflict(
                                         topic=name_a.title(),
                                         item_a=item_a,
-                                        val_a=val_a,
+                                        val_a=v_a,
                                         item_b=item_b,
-                                        val_b=val_b,
+                                        val_b=v_b,
                                         diff_pct=diff_pct
                                     )
                                     conflicts.append(conflict)
@@ -177,22 +181,27 @@ class ConflictDetector:
         weight_a = calculate_evidence_weight(item_a)
         weight_b = calculate_evidence_weight(item_b)
 
+        v_a_num = safe_num(val_a)
+        v_b_num = safe_num(val_b)
+        w_a_num = safe_num(weight_a)
+        w_b_num = safe_num(weight_b)
+        diff_num = safe_num(diff_pct)
+
         discrepancy_str = (
-            f"Metric '{topic}' discrepancy ({diff_pct:.2f}% variance): "
-            f"Source A ('{item_a.source}') reports {val_a:,.2f} (Weight: {weight_a:.2f}) vs "
-            f"Source B ('{item_b.source}') reports {val_b:,.2f} (Weight: {weight_b:.2f})."
+            f"Metric '{topic}' discrepancy ({diff_num:.2f}% variance): "
+            f"Source A ('{item_a.source}') reports {v_a_num:,.2f} (Weight: {w_a_num:.2f}) vs "
+            f"Source B ('{item_b.source}') reports {v_b_num:,.2f} (Weight: {w_b_num:.2f})."
         )
 
-        # Resolution policy logic
-        weight_diff = abs(weight_a - weight_b)
+        weight_diff = abs(w_a_num - w_b_num)
         
         if weight_diff >= 0.15:
-            if weight_a > weight_b:
+            if w_a_num > w_b_num:
                 winning_id = item_a.id
-                reasoning = f"Resolved in favor of Source A ('{item_a.source}') due to higher reliability weight ({weight_a:.2f} vs {weight_b:.2f}). SEC statutory filings supersede unverified secondary sources."
+                reasoning = f"Resolved in favor of Source A ('{item_a.source}') due to higher reliability weight ({w_a_num:.2f} vs {w_b_num:.2f}). SEC statutory filings supersede unverified secondary sources."
             else:
                 winning_id = item_b.id
-                reasoning = f"Resolved in favor of Source B ('{item_b.source}') due to higher reliability weight ({weight_b:.2f} vs {weight_a:.2f})."
+                reasoning = f"Resolved in favor of Source B ('{item_b.source}') due to higher reliability weight ({w_b_num:.2f} vs {w_a_num:.2f})."
 
             return Conflict(
                 topic=topic,
@@ -213,5 +222,5 @@ class ConflictDetector:
                 resolved=False,
                 winning_evidence_id=None,
                 resolution_strategy="Surfaced for Analyst Review",
-                reasoning=f"UNRESOLVED CONFLICT SURFACED: Unresolved discrepancy between close-weighted sources ({weight_a:.2f} vs {weight_b:.2f}). Surfaced explicitly in report with full transparency."
+                reasoning=f"UNRESOLVED CONFLICT SURFACED: Unresolved discrepancy between close-weighted sources ({w_a_num:.2f} vs {w_b_num:.2f}). Surfaced explicitly in report with full transparency."
             )
