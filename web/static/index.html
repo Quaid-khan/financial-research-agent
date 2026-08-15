@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous Financial Research Agent | BFSI Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="logo-group">
+      <h1><span>Autonomous</span> Financial Agent</h1>
+      <p class="tagline">BFSI Multi-Source Intelligence & SEC EDGAR Research Engine (Gemini 3.6 Flash)</p>
+    </div>
+    <div class="status-badge">● Agent Engine Online</div>
+  </header>
+
+  <main>
+    <section class="search-section">
+      <form class="search-form" id="researchForm">
+        <div>
+          <label for="tickerInput">Stock Ticker</label>
+          <input type="text" id="tickerInput" value="JPM" placeholder="e.g. JPM, BAC, AAPL" required>
+        </div>
+        <div>
+          <label for="taskInput">Research Prompt / Task</label>
+          <input type="text" id="taskInput" value="Analyze financial performance, 10-K revenue disclosures, and CET1 capital ratio for JPMorgan Chase." required>
+        </div>
+        <button type="submit" class="btn-primary" id="runAgentBtn">Run Research</button>
+      </form>
+      <div class="quick-tickers">
+        <span>Quick Tickers:</span>
+        <button class="ticker-pill" onclick="setTicker('JPM')">JPM</button>
+        <button class="ticker-pill" onclick="setTicker('BAC')">BAC</button>
+        <button class="ticker-pill" onclick="setTicker('AAPL')">AAPL</button>
+        <button class="ticker-pill" onclick="setTicker('MSFT')">MSFT</button>
+      </div>
+    </section>
+
+    <div class="tabs-container">
+      <button class="tab-btn active" onclick="switchTab('traceTab')">ReAct Execution Trace</button>
+      <button class="tab-btn" onclick="switchTab('reportTab')">Institutional Research Report</button>
+      <button class="tab-btn" onclick="switchTab('scorecardTab')">21-Metric Scorecard</button>
+      <button class="tab-btn" onclick="switchTab('savedReportsTab')">Available Portfolio Downloads</button>
+    </div>
+
+    <!-- TAB 1: REACT TRACE -->
+    <div id="traceTab" class="tab-content active">
+      <div class="card">
+        <div class="card-title">
+          <span>ReAct Control Loop (Reason-Act-Observe Scratchpad)</span>
+          <span id="stepCountBadge" style="font-size: 0.85rem; color: var(--text-muted);">Ready</span>
+        </div>
+        <div id="traceContainer">
+          <p style="color: var(--text-muted);">Click <strong>"Run Research"</strong> to execute the agent and stream live ReAct steps.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: RESEARCH REPORT -->
+    <div id="reportTab" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>Generated Research Report</span>
+          <div class="download-bar" id="reportDownloadBar" style="display: none;">
+            <a href="#" id="pdfDownloadLink" class="btn-secondary" target="_blank">📄 Download PDF Report</a>
+            <a href="#" id="mdDownloadLink" class="btn-secondary" target="_blank">📝 Download Markdown</a>
+          </div>
+        </div>
+        <div id="reportPreviewContainer" class="report-markdown-preview">
+          *No report generated yet. Run a research query above.*
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: EVALUATION SCORECARD -->
+    <div id="scorecardTab" class="tab-content">
+      <div class="card">
+        <div class="card-title">21-Metric Evaluation Scorecard (Phase 6 Framework)</div>
+        <div id="scorecardContainer">
+          <p style="color: var(--text-muted);">Scorecard metrics will populate upon completing research.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: SAVED REPORTS -->
+    <div id="savedReportsTab" class="tab-content">
+      <div class="card">
+        <div class="card-title">Available Portfolio Demonstration Artifacts</div>
+        <div id="savedReportsContainer">
+          <p style="color: var(--text-muted);">Loading available reports...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

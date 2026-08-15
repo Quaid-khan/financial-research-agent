@@ -4,6 +4,7 @@ An autonomous, multi-tool AI agent system designed for Banking, Financial Servic
 
 ## 🎯 Key Objectives & Capabilities
 
+- **Interactive Web Dashboard**: Full-featured institutional Web UI (`http://127.0.0.1:5000`) for running agent queries, streaming live ReAct traces, viewing financial statement tables, downloading PDF/Markdown reports, and inspecting evaluation scorecards.
 - **SEC Filings Analysis**: Extraction, parsing, and financial ratio analysis from SEC EDGAR 10-K, 10-Q, and 8-K disclosures.
 - **Earnings Transcript Processing**: Qualitative sentiment tracking, executive guidance extraction, and Q&A topic breakdown.
 - **Three-Layer Memory System**: Working (short-term), Episodic (session-term), and Long-Term (cross-session ChromaDB vector store with hybrid scoring).
@@ -12,10 +13,32 @@ An autonomous, multi-tool AI agent system designed for Banking, Financial Servic
 - **21-Metric Financial Evaluation Framework**: Systematic scoring suite across 7 categories (Factual Accuracy, Completeness, Reasoning Quality, Conflict Handling, Memory Utilization, Report Quality, Efficiency & Budget).
 - **8 End-to-End Benchmark Challenges**: Automated benchmark suite validating complete agent capabilities from simple lookups to capstone research reports (100% Pass Rate).
 
+## 🖥️ Interactive Web UI Dashboard
+
+The system includes an interactive web dashboard interface. Launch the server and open your web browser at:
+
+👉 **`http://127.0.0.1:5000`**
+
+### Features:
+- **Live ReAct Execution Trace**: Inspect reasoning thoughts, tool invocations, and observations step-by-step.
+- **Institutional Research Reports**: Preview Markdown reports and download clean PDF reports with 1 click.
+- **21-Metric Scorecard Viewer**: Interactively inspect overall score, letter grade (`A+` to `F`), and individual metric breakdowns.
+- **Portfolio Downloads**: Access pre-generated demonstration reports and scorecards.
+
+```bash
+# Launch Web Dashboard Server
+python web/app.py
+```
+
+---
+
 ## 🏗️ Project Architecture
 
 ```
 financial-research-agent/
+├── web/
+│   ├── app.py         # HTTP Web Dashboard Server & REST API endpoints
+│   └── static/        # Web UI HTML, CSS styles, and JavaScript client logic
 ├── agent/
 │   ├── core.py        # ReAct control loop, AgentState, AgentStep, ToolCall
 │   ├── config.py      # Environment validation & Pydantic settings schema
@@ -72,6 +95,7 @@ financial-research-agent/
 
 - **Language**: Python 3.11+
 - **LLM Engine**: Google Gemini API (`gemini-3.6-flash`) via `google-genai`
+- **Frontend / Web UI**: HTML5, Vanilla CSS3, Client JavaScript, REST APIs
 - **Control Flow**: ReAct (Reason-Act-Observe) pattern with structured scratchpad tracing
 - **Data Tools**: SEC EDGAR API (10-K/10-Q/XBRL facts) + Earnings Call Transcripts
 - **Report Generation**: Markdown & PDF export (`fpdf2`) with auto-generated financial tables
@@ -83,7 +107,6 @@ financial-research-agent/
 - **Embeddings**: `sentence-transformers` (`all-MiniLM-L6-v2`)
 - **Vector DB**: ChromaDB (`./cache/chroma_db`)
 - **Testing**: Pytest unit test coverage (45 passing tests)
-- **Design Philosophy**: Modular architecture where every component is independently testable, reusable, and clearly documented.
 
 ## 🚀 Getting Started
 
@@ -115,24 +138,25 @@ financial-research-agent/
    python scripts/check_setup.py
    ```
 
-5. **Run 8 Benchmark Challenges**:
+5. **Launch Interactive Web UI Dashboard**:
+   ```bash
+   python web/app.py
+   ```
+   Open **`http://127.0.0.1:5000`** in your web browser.
+
+6. **Run 8 Benchmark Challenges**:
    ```bash
    python -m eval.run_all_challenges
    ```
 
-6. **Generate Sample Research Report**:
+7. **Generate Sample Research Report**:
    ```bash
    python -m scripts.generate_sample_report
    ```
 
-7. **Generate Sample Evaluation Scorecard**:
+8. **Generate Sample Evaluation Scorecard**:
    ```bash
    python -m scripts.generate_sample_scorecard
-   ```
-
-8. **Run ReAct Agent Demo Harness**:
-   ```bash
-   python examples/demo_agent.py
    ```
 
 9. **Run Complete Unit Test Suite**:
@@ -149,7 +173,7 @@ financial-research-agent/
 - [x] **Phase 4**: Multi-Source Synthesis Engine & Explicit Conflict Resolution
 - [x] **Phase 5**: Publication-Grade Report Generation & PDF Delivery Engine
 - [x] **Phase 6**: Financial Evaluation Framework (21 Metrics across 7 Categories)
-- [x] **Phase 7**: End-to-End Benchmark Challenges & Portfolio Verification (8/8 Passed)
+- [x] **Phase 7**: End-to-End Benchmark Challenges & Web Dashboard UI (100% Pass Rate)
 
 ## 📄 License
 

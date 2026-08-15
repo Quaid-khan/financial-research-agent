@@ -5,21 +5,19 @@ All notable changes to the Autonomous Financial Research Agent will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.1.0] - 2026-08-16
+
+### Added - Interactive Web Application UI Dashboard
+- Created interactive Web Application Dashboard in `web/app.py` serving REST APIs and static UI assets (`web/static/`).
+- Accessible locally at `http://127.0.0.1:5000` or `http://localhost:5000`.
+- Features live Ticker Search (`JPM`, `BAC`, `AAPL`, `MSFT`), ReAct Scratchpad execution trace streaming, multi-source financial report previewing, PDF/Markdown report downloading, and 21-metric evaluation scorecard visualization.
+
 ## [7.0.0] - 2026-08-16
 
 ### Added - Phase 7 End-to-End Benchmark Challenges & Portfolio Verification
-- Implemented **8 Progressively Difficult Benchmark Challenges** in `eval/challenges/` validating full agent pipeline (Phases 1-6):
-  1. `challenge_01.py`: Single-company 10-K lookup.
-  2. `challenge_02.py`: Multi-year trend analysis (3-year revenue trend).
-  3. `challenge_03.py`: Earnings call sentiment & executive guidance extraction.
-  4. `challenge_04.py`: Cross-source conflict detection & resolution.
-  5. `challenge_05.py`: Multi-company comparative analysis (JPM, BAC, AAPL).
-  6. `challenge_06.py`: Memory-dependent follow-up query (cross-session ChromaDB recall).
-  7. `challenge_07.py`: Reasoning under ambiguity ('Chase' -> JPM entity resolution).
-  8. `challenge_08.py`: Capstone end-to-end research report generation & 21-metric scorecard evaluation.
+- Implemented **8 Progressively Difficult Benchmark Challenges** in `eval/challenges/` validating full agent pipeline (Phases 1-6).
 - Implemented `eval/run_all_challenges.py` benchmark runner.
 - Generated `RESULTS.md` portfolio centerpiece documentation summarizing all 8 challenge results (100.0% pass rate).
-- Added unit test suite in `tests/test_challenges.py` verifying all 8 challenges (45 total unit & integration tests passing).
 
 ## [6.0.0] - 2026-08-16
 
