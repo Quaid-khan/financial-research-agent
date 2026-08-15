@@ -19,7 +19,10 @@ financial-research-agent/
 │   ├── core.py        # ReAct control loop, AgentState, AgentStep, ToolCall
 │   ├── config.py      # Environment validation & Pydantic settings schema
 │   ├── tools/
-│   │   └── registry.py# ToolRegistry, ToolDefinition, FunctionDeclaration export
+│   │   ├── registry.py    # ToolRegistry, ToolDefinition, FunctionDeclaration export
+│   │   ├── cache.py       # SQLite response caching engine (LocalCache)
+│   │   ├── edgar.py       # SEC EDGAR search, section parser, XBRL company facts
+│   │   └── transcripts.py # Earnings call transcript fetcher & Q&A segmenter
 │   ├── memory/        # Episodic, semantic, and working memory stores
 │   ├── synthesis/     # Multi-source intelligence & reconciliation engines
 │   └── reporting/     # Structured research report generators & formatters
@@ -28,11 +31,13 @@ financial-research-agent/
 ├── scripts/
 │   └── check_setup.py # System setup & environment verification script
 ├── tests/
-│   ├── test_config.py     # Config validation unit tests
-│   └── test_react_loop.py # ReAct loop & ToolRegistry unit tests
+│   ├── test_config.py      # Config validation unit tests
+│   ├── test_react_loop.py  # ReAct loop & ToolRegistry unit tests
+│   ├── test_edgar_tools.py # SEC EDGAR tools unit tests (mocked fixtures)
+│   └── test_transcripts.py # Earnings transcripts tools unit tests
 ├── examples/
-│   └── demo_agent.py  # CLI harness demo testing agent against stub tools
-├── cache/             # Local data and document cache
+│   └── demo_agent.py  # CLI harness demo testing agent against registered tools
+├── cache/             # Local SQLite database and raw filing cache
 ├── .env.example       # Environment configuration template
 ├── CHANGELOG.md       # Version history and phase progression tracking
 ├── requirements.txt   # Project dependencies
@@ -44,11 +49,12 @@ financial-research-agent/
 - **Language**: Python 3.11+
 - **LLM Engine**: Google Gemini API (`gemini-3.6-flash`) via `google-genai`
 - **Control Flow**: ReAct (Reason-Act-Observe) pattern with structured scratchpad tracing
+- **Data Collection Tools**: SEC EDGAR API (10-K/10-Q/XBRL facts) + Earnings Call Transcripts
 - **Data Models**: Pydantic v2 for strict type safety and schema validation
-- **Configuration**: `python-dotenv` for secure environment variable management
+- **Caching**: Local SQLite database cache (`cache/http_cache.db`)
 - **Vector DB**: ChromaDB for local embedding storage
 - **Embeddings**: `sentence-transformers` (`all-MiniLM-L6-v2`)
-- **Testing**: Pytest unit and integration test coverage
+- **Testing**: Pytest unit and integration test coverage with mocked API fixtures
 - **Design Philosophy**: Modular architecture where every component is independently testable, reusable, and clearly documented.
 
 ## 🚀 Getting Started
@@ -86,11 +92,16 @@ financial-research-agent/
    python examples/demo_agent.py
    ```
 
+6. **Run Unit Tests**:
+   ```bash
+   pytest tests/
+   ```
+
 ## 📜 Roadmap & Build Phases
 
 - [x] **Phase 0**: Project Setup & Environment Configuration Engine
 - [x] **Phase 1**: ReAct Core Engine & Tool Registry Architecture
-- [ ] **Phase 2**: SEC EDGAR Filing Retrieval & Financial Ratio Tools
+- [x] **Phase 2**: SEC EDGAR Filing Retrieval & Financial Ratio Tools
 - [ ] **Phase 3**: Earnings Call & Narrative Analysis Engine
 - [ ] **Phase 4**: Agent Memory & State Management
 - [ ] **Phase 5**: Multi-Source Synthesis & Reasoning Pipeline
