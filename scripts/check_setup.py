@@ -2,10 +2,11 @@
 """Diagnostic script to check environment setup and dependencies.
 
 Verifies:
-1. Environment variables and .env file configuration.
-2. SEC EDGAR User-Agent compliance.
-3. Local Sentence-Transformers embedding model loading and inference.
-4. ChromaDB persistent storage initialization and write test.
+1. Environment variables and .env file configuration (GEMINI_API_KEY, SEC_EDGAR_USER_AGENT).
+2. Google Gemini API connectivity & model availability.
+3. SEC EDGAR User-Agent compliance.
+4. Local Sentence-Transformers embedding model loading and inference.
+5. ChromaDB persistent storage initialization and write test.
 """
 
 import sys
@@ -32,7 +33,7 @@ def print_header():
 
 
 def check_env_vars() -> bool:
-    print("\n[1/4] Checking Environment Configuration...")
+    print("\n[1/5] Checking Environment Configuration...")
     env_file = project_root / ".env"
     if not env_file.exists():
         print("  [FAIL] '.env' file not found in project root.")
@@ -43,8 +44,9 @@ def check_env_vars() -> bool:
     try:
         from agent.config import get_settings
         settings = get_settings()
-        masked_key = settings.anthropic_api_key[:7] + "..." if len(settings.anthropic_api_key) >= 7 else "configured"
-        print(f"  [PASS] ANTHROPIC_API_KEY configured ('{masked_key}')")
+        masked_key = settings.gemini_api_key[:7] + "..." if len(settings.gemini_api_key) >= 7 else "configured"
+        print(f"  [PASS] GEMINI_API_KEY configured ('{masked_key}')")
+        print(f"  [PASS] GEMINI_MODEL set to ('{settings.gemini_model}')")
         print(f"  [PASS] SEC_EDGAR_USER_AGENT valid ('{settings.sec_edgar_user_agent}')")
         return True
     except Exception as err:
@@ -52,12 +54,33 @@ def check_env_vars() -> bool:
         return False
 
 
+def check_gemini_api() -> bool:
+    print("\n[2/5] Checking Google Gemini API Connectivity...")
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key or api_key.startswith("your_") or api_key == "skip" or api_key == "placeholder":
+        print("  [SKIP] GEMINI_API_KEY is unconfigured or set to placeholder/skip. Skipping online API call test.")
+        return True
+
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+        model = genai.GenerativeModel(model_name)
+        response = model.generate_content("Financial research system test ping. Reply with 'OK'.")
+        print(f"  [PASS] Gemini API connection verified using '{model_name}'. Response: {response.text.strip()[:40]}")
+        return True
+    except Exception as err:
+        print(f"  [FAIL] Gemini API connection failed: {err}")
+        print("         Verify your API key at https://aistudio.google.com/apikey")
+        return False
+
+
 def check_embedding_model() -> bool:
-    print("\n[2/4] Checking Sentence-Transformers Embedding Engine...")
+    print("\n[3/5] Checking Sentence-Transformers Embedding Engine...")
     try:
         from sentence_transformers import SentenceTransformer
         model_name = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
-        print(f"  ... Loading model '{model_name}' (downloads on first run)...")
+        print(f"  ... Loading model '{model_name}'...")
         model = SentenceTransformer(model_name)
         embedding = model.encode("Financial analysis 10-K query test.")
         print(f"  [PASS] Model '{model_name}' loaded successfully. Vector dimension: {len(embedding)}")
@@ -68,7 +91,7 @@ def check_embedding_model() -> bool:
 
 
 def check_chroma_db() -> bool:
-    print("\n[3/4] Checking ChromaDB Local Storage Write Access...")
+    print("\n[4/5] Checking ChromaDB Local Storage Write Access...")
     try:
         import chromadb
         db_path = os.getenv("CHROMA_DB_PATH", "./cache/chroma_db")
@@ -93,7 +116,7 @@ def check_chroma_db() -> bool:
 
 
 def check_directories() -> bool:
-    print("\n[4/4] Checking Required Directory Structure...")
+    print("\n[5/5] Checking Required Directory Structure...")
     required_dirs = [
         "agent/tools", "agent/memory", "agent/synthesis",
         "agent/reporting", "eval/challenges", "tests", "examples", "cache"
@@ -113,6 +136,7 @@ def main():
     print_header()
     results = [
         ("Environment Variables", check_env_vars()),
+        ("Gemini API Connection", check_gemini_api()),
         ("Embedding Model", check_embedding_model()),
         ("ChromaDB Vector Store", check_chroma_db()),
         ("Directory Structure", check_directories()),

@@ -1,6 +1,6 @@
 # Autonomous Financial Research Agent for BFSI
 
-An autonomous, multi-tool AI agent system designed for Banking, Financial Services, and Insurance (BFSI) use cases. This agent conducts deep financial research across SEC filings (10-K, 10-Q), earnings call transcripts, market data, and regulatory disclosures to produce synthesized, publication-grade financial analysis reports.
+An autonomous, multi-tool AI agent system designed for Banking, Financial Services, and Insurance (BFSI) use cases. Powered by Google Gemini (Free Tier), this agent conducts deep financial research across SEC filings (10-K, 10-Q), earnings call transcripts, market data, and regulatory disclosures to produce synthesized, publication-grade financial analysis reports.
 
 ## 🎯 Key Objectives & Capabilities
 
@@ -37,6 +37,7 @@ financial-research-agent/
 ## 🛠️ Tech Stack & Conventions
 
 - **Language**: Python 3.11+
+- **LLM Engine**: Google Gemini API (`gemini-2.0-flash`) via `google-genai` / `google-generativeai`
 - **Data Models**: Pydantic v2 for strict type safety and schema validation
 - **Configuration**: `python-dotenv` for secure environment variable management
 - **Vector DB**: ChromaDB for local embedding storage
@@ -84,7 +85,8 @@ financial-research-agent/
 
 | Variable | Description | Source / Requirement |
 | :--- | :--- | :--- |
-| `ANTHROPIC_API_KEY` | Anthropic API key for Claude LLM reasoning | **Required**. Obtain at [console.anthropic.com](https://console.anthropic.com/) |
+| `GEMINI_API_KEY` | Google Gemini API key for LLM reasoning | **Required (Free Tier)**. Obtain at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `GEMINI_MODEL` | Gemini LLM model identifier | Optional (Default: `gemini-2.0-flash`) |
 | `SEC_EDGAR_USER_AGENT` | User-Agent required by SEC EDGAR Fair Access rules | **Required**. Format: `YourName your.email@example.com` |
 | `EMBEDDING_MODEL` | Local HuggingFace embedding model | Optional (Default: `all-MiniLM-L6-v2`, local execution) |
 | `CHROMA_DB_PATH` | Local ChromaDB vector database directory | Optional (Default: `./cache/chroma_db`) |
@@ -102,7 +104,7 @@ python scripts/check_setup.py
 
 ## 📜 Roadmap & Build Phases
 
-- [x] **Phase 0**: Project Setup & Environment Configuration Engine
+- [x] **Phase 0**: Project Setup & Environment Configuration Engine (Google Gemini Free Tier)
 - [ ] **Phase 1**: Tool Registry & SEC Filing Retrieval Engine
 - [ ] **Phase 2**: Earnings Call & Narrative Analysis Engine
 - [ ] **Phase 3**: Agent Memory & State Management

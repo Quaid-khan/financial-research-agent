@@ -25,11 +25,15 @@ load_dotenv(dotenv_path=env_path)
 class Settings(BaseModel):
     """Pydantic model validating system configuration and API keys."""
 
-    # LLM Settings
-    anthropic_api_key: str = Field(
-        default_factory=lambda: os.getenv("ANTHROPIC_API_KEY", ""),
-        description="Anthropic API Key for Claude LLM inference.",
+    # Google Gemini LLM Settings (Free Tier)
+    gemini_api_key: str = Field(
+        default_factory=lambda: os.getenv("GEMINI_API_KEY", ""),
+        description="Google Gemini API key obtained from https://aistudio.google.com/apikey",
         validate_default=True
+    )
+    gemini_model: str = Field(
+        default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+        description="Gemini LLM model identifier (Default: gemini-2.0-flash)."
     )
 
     # SEC EDGAR Requirements
@@ -73,15 +77,15 @@ class Settings(BaseModel):
         description="Directory path for HTTP and raw data caching."
     )
 
-    @field_validator("anthropic_api_key", mode="after")
+    @field_validator("gemini_api_key", mode="after")
     @classmethod
-    def validate_anthropic_key(cls, value: str) -> str:
-        """Ensure Anthropic API key is provided and not a placeholder."""
+    def validate_gemini_key(cls, value: str) -> str:
+        """Ensure Gemini API key is provided and not a placeholder."""
         cleaned = (value or "").strip()
         if not cleaned or cleaned.startswith("your_") or cleaned == "placeholder":
             raise ValueError(
-                "ANTHROPIC_API_KEY is missing or unconfigured in .env file. "
-                "Obtain a key at https://console.anthropic.com/ and add it to .env"
+                "GEMINI_API_KEY is missing or unconfigured in .env file. "
+                "Obtain a free key at https://aistudio.google.com/apikey and add it to .env"
             )
         return cleaned
 
