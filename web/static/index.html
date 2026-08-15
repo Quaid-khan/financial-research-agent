@@ -3,96 +3,285 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Autonomous Financial Research Agent | BFSI Dashboard</title>
+  <title>Autonomous Financial Research Agent | BFSI Enterprise Dashboard</title>
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- SVG / FontAwesome Icon Toolkit -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Design System Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <div class="logo-group">
-      <h1><span>Autonomous</span> Financial Agent</h1>
-      <p class="tagline">BFSI Multi-Source Intelligence & SEC EDGAR Research Engine (Gemini 3.6 Flash)</p>
+
+  <!-- TOP ENTERPRISE HEADER -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-logo">
+        <i class="fa-solid fa-chart-line-up"></i>
+      </div>
+      <div>
+        <h1 class="brand-title">Antigravity <span>Financial Agent</span></h1>
+        <p class="brand-subtitle">Autonomous BFSI Intelligence • Gemini 3.6 Flash • SEC EDGAR • ChromaDB</p>
+      </div>
     </div>
-    <div class="status-badge">● Agent Engine Online</div>
+    
+    <div class="header-actions">
+      <div class="status-indicator">
+        <span class="pulse-dot"></span>
+        <span class="status-text">Engine Online (Gemini Free Tier)</span>
+      </div>
+      <button class="btn-icon" title="System Settings" onclick="switchTab('scorecardTab')">
+        <i class="fa-solid fa-sliders"></i>
+      </button>
+    </div>
   </header>
 
-  <main>
-    <section class="search-section">
-      <form class="search-form" id="researchForm">
+  <!-- MAIN CONTAINER -->
+  <div class="app-container">
+
+    <!-- KPI STAT METRICS BAR -->
+    <section class="kpi-bar">
+      <div class="kpi-card">
+        <div class="kpi-icon blue"><i class="fa-solid fa-building-columns"></i></div>
         <div>
-          <label for="tickerInput">Stock Ticker</label>
-          <input type="text" id="tickerInput" value="JPM" placeholder="e.g. JPM, BAC, AAPL" required>
+          <div class="kpi-label">SEC Disclosures Scanned</div>
+          <div class="kpi-value" id="kpiFilings">10-K / 10-Q / XBRL</div>
         </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon emerald"><i class="fa-solid fa-shield-check"></i></div>
         <div>
-          <label for="taskInput">Research Prompt / Task</label>
-          <input type="text" id="taskInput" value="Analyze financial performance, 10-K revenue disclosures, and CET1 capital ratio for JPMorgan Chase." required>
+          <div class="kpi-label">Synthesis Confidence</div>
+          <div class="kpi-value" id="kpiConfidence">95.0%</div>
         </div>
-        <button type="submit" class="btn-primary" id="runAgentBtn">Run Research</button>
-      </form>
-      <div class="quick-tickers">
-        <span>Quick Tickers:</span>
-        <button class="ticker-pill" onclick="setTicker('JPM')">JPM</button>
-        <button class="ticker-pill" onclick="setTicker('BAC')">BAC</button>
-        <button class="ticker-pill" onclick="setTicker('AAPL')">AAPL</button>
-        <button class="ticker-pill" onclick="setTicker('MSFT')">MSFT</button>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon purple"><i class="fa-solid fa-award"></i></div>
+        <div>
+          <div class="kpi-label">Evaluation Scorecard</div>
+          <div class="kpi-value" id="kpiGrade">Grade A+ (98.8)</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon gold"><i class="fa-solid fa-database"></i></div>
+        <div>
+          <div class="kpi-label">Vector Memory Store</div>
+          <div class="kpi-value" id="kpiMemory">ChromaDB Persistent</div>
+        </div>
       </div>
     </section>
 
-    <div class="tabs-container">
-      <button class="tab-btn active" onclick="switchTab('traceTab')">ReAct Execution Trace</button>
-      <button class="tab-btn" onclick="switchTab('reportTab')">Institutional Research Report</button>
-      <button class="tab-btn" onclick="switchTab('scorecardTab')">21-Metric Scorecard</button>
-      <button class="tab-btn" onclick="switchTab('savedReportsTab')">Available Portfolio Downloads</button>
-    </div>
-
-    <!-- TAB 1: REACT TRACE -->
-    <div id="traceTab" class="tab-content active">
-      <div class="card">
-        <div class="card-title">
-          <span>ReAct Control Loop (Reason-Act-Observe Scratchpad)</span>
-          <span id="stepCountBadge" style="font-size: 0.85rem; color: var(--text-muted);">Ready</span>
-        </div>
-        <div id="traceContainer">
-          <p style="color: var(--text-muted);">Click <strong>"Run Research"</strong> to execute the agent and stream live ReAct steps.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 2: RESEARCH REPORT -->
-    <div id="reportTab" class="tab-content">
-      <div class="card">
-        <div class="card-title">
-          <span>Generated Research Report</span>
-          <div class="download-bar" id="reportDownloadBar" style="display: none;">
-            <a href="#" id="pdfDownloadLink" class="btn-secondary" target="_blank">📄 Download PDF Report</a>
-            <a href="#" id="mdDownloadLink" class="btn-secondary" target="_blank">📝 Download Markdown</a>
+    <!-- RESEARCH SEARCH BAR SECTION -->
+    <section class="search-card">
+      <form id="researchForm" class="search-form">
+        <div class="input-group ticker-input-group">
+          <label for="tickerInput"><i class="fa-solid fa-tag"></i> Stock Ticker</label>
+          <div class="input-wrapper">
+            <input type="text" id="tickerInput" value="JPM" placeholder="e.g. JPM, BAC, AAPL, MSFT" required>
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
           </div>
         </div>
-        <div id="reportPreviewContainer" class="report-markdown-preview">
-          *No report generated yet. Run a research query above.*
+
+        <div class="input-group prompt-input-group">
+          <label for="taskInput"><i class="fa-solid fa-brain"></i> Institutional Research Task / Query</label>
+          <input type="text" id="taskInput" value="Analyze financial performance, 10-K revenue disclosures, and CET1 capital ratio for JPMorgan Chase." required>
+        </div>
+
+        <button type="submit" id="runAgentBtn" class="btn-execute">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Execute Agent</span>
+        </button>
+      </form>
+
+      <!-- QUICK TICKER SELECTOR CHIPS -->
+      <div class="quick-chips">
+        <span class="chips-label">Quick Benchmark Entities:</span>
+        <button class="chip active" onclick="setTicker('JPM')"><i class="fa-solid fa-building"></i> JPM (JPMorgan)</button>
+        <button class="chip" onclick="setTicker('BAC')"><i class="fa-solid fa-building"></i> BAC (Bank of America)</button>
+        <button class="chip" onclick="setTicker('AAPL')"><i class="fa-solid fa-laptop"></i> AAPL (Apple Inc)</button>
+        <button class="chip" onclick="setTicker('MSFT')"><i class="fa-solid fa-window-maximize"></i> MSFT (Microsoft)</button>
+        <button class="chip" onclick="setTicker('NVDA')"><i class="fa-solid fa-microchip"></i> NVDA (NVIDIA)</button>
+      </div>
+    </section>
+
+    <!-- NAVIGATION TABS BAR -->
+    <nav class="nav-tabs">
+      <button class="tab-item active" onclick="switchTab('traceTab')">
+        <i class="fa-solid fa-terminal"></i>
+        <span>ReAct Execution Trace</span>
+        <span class="tab-badge" id="stepCountBadge">Ready</span>
+      </button>
+
+      <button class="tab-item" onclick="switchTab('reportTab')">
+        <i class="fa-solid fa-file-invoice-dollar"></i>
+        <span>Institutional Report</span>
+      </button>
+
+      <button class="tab-item" onclick="switchTab('scorecardTab')">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>21-Metric Scorecard</span>
+      </button>
+
+      <button class="tab-item" onclick="switchTab('memoryTab')">
+        <i class="fa-solid fa-memory"></i>
+        <span>3-Layer Memory Store</span>
+      </button>
+
+      <button class="tab-item" onclick="switchTab('portfolioTab')">
+        <i class="fa-solid fa-folder-open"></i>
+        <span>Artifact Downloads</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: REACT EXECUTION TRACE -->
+    <section id="traceTab" class="tab-pane active">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title"><i class="fa-solid fa-microchip-ai"></i> ReAct Control Loop Scratchpad</h2>
+            <p class="panel-desc">Real-time reasoning thoughts, selected tool actions, and raw environment observations.</p>
+          </div>
+          <button class="btn-secondary-sm" onclick="clearTrace()"><i class="fa-solid fa-rotate-left"></i> Reset Trace</button>
+        </div>
+
+        <div id="traceContainer" class="trace-feed">
+          <div class="empty-state">
+            <i class="fa-solid fa-terminal"></i>
+            <h3>Agent Standing By</h3>
+            <p>Click <strong>"Execute Agent"</strong> above to trigger autonomous ReAct tool execution.</p>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- TAB 3: EVALUATION SCORECARD -->
-    <div id="scorecardTab" class="tab-content">
-      <div class="card">
-        <div class="card-title">21-Metric Evaluation Scorecard (Phase 6 Framework)</div>
+    <!-- TAB 2: INSTITUTIONAL REPORT -->
+    <section id="reportTab" class="tab-pane">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title"><i class="fa-solid fa-file-lines"></i> Publication-Grade Financial Research Report</h2>
+            <p class="panel-desc">Multi-source synthesis with auto-rendered XBRL financial statement tables and inline citations.</p>
+          </div>
+          
+          <div class="download-group" id="reportDownloadBar">
+            <a href="#" id="pdfDownloadLink" class="btn-download pdf" target="_blank">
+              <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+            </a>
+            <a href="#" id="mdDownloadLink" class="btn-download md" target="_blank">
+              <i class="fa-solid fa-file-code"></i> Markdown Source
+            </a>
+          </div>
+        </div>
+
+        <div id="reportPreviewContainer" class="report-content-body">
+          <div class="empty-state">
+            <i class="fa-solid fa-file-circle-question"></i>
+            <h3>No Active Report Generated</h3>
+            <p>Execute research to view synthesized research report.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 21-METRIC EVALUATION SCORECARD -->
+    <section id="scorecardTab" class="tab-pane">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title"><i class="fa-solid fa-square-poll-vertical"></i> 21-Metric Evaluation Scorecard (Phase 6 Framework)</h2>
+            <p class="panel-desc">Systematic scoring across Factual Accuracy, Completeness, Reasoning Quality, Conflict Handling, Memory, Quality, and Budget.</p>
+          </div>
+          
+          <div class="search-filter">
+            <input type="text" id="scorecardSearch" placeholder="Filter metrics..." onkeyup="filterScorecardMetrics()">
+          </div>
+        </div>
+
         <div id="scorecardContainer">
-          <p style="color: var(--text-muted);">Scorecard metrics will populate upon completing research.</p>
+          <div class="empty-state">
+            <i class="fa-solid fa-chart-user"></i>
+            <h3>Scorecard Not Evaluated Yet</h3>
+            <p>Run research to evaluate agent performance across all 21 metrics.</p>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- TAB 4: SAVED REPORTS -->
-    <div id="savedReportsTab" class="tab-content">
-      <div class="card">
-        <div class="card-title">Available Portfolio Demonstration Artifacts</div>
-        <div id="savedReportsContainer">
-          <p style="color: var(--text-muted);">Loading available reports...</p>
+    <!-- TAB 4: 3-LAYER MEMORY STORE -->
+    <section id="memoryTab" class="tab-pane">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title"><i class="fa-solid fa-hard-drive"></i> Three-Layer Memory System Inspector</h2>
+            <p class="panel-desc">Short-term working memory, session-term episodic memory, and cross-session persistent ChromaDB vector storage.</p>
+          </div>
+        </div>
+
+        <div class="memory-grid">
+          <!-- Working Memory Gauge -->
+          <div class="memory-card">
+            <h3 class="memory-card-title"><i class="fa-solid fa-clock-history"></i> Layer 1: Working Memory</h3>
+            <p class="memory-card-desc">In-context scratchpad token budget window management.</p>
+            <div class="progress-bar-container">
+              <div class="progress-label"><span>Token Usage</span> <span id="workingTokenVal">1,250 / 4,000</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width: 31%;"></div></div>
+            </div>
+            <div class="memory-tag">Status: Auto-Summarization Active</div>
+          </div>
+
+          <!-- Episodic Memory -->
+          <div class="memory-card">
+            <h3 class="memory-card-title"><i class="fa-solid fa-list-check"></i> Layer 2: Episodic Memory</h3>
+            <p class="memory-card-desc">Session-term log of completed sub-tasks and observations.</p>
+            <div class="memory-tag emerald">Active Session ID: session_1723766400</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Sub-task entries recorded: 4 items</p>
+          </div>
+
+          <!-- Long-Term Vector Store -->
+          <div class="memory-card">
+            <h3 class="memory-card-title"><i class="fa-solid fa-network-wired"></i> Layer 3: Long-Term ChromaDB</h3>
+            <p class="memory-card-desc">Persistent sentence-transformer embeddings (all-MiniLM-L6-v2) for cross-session recall.</p>
+            <div class="memory-tag purple">Collection: financial_longterm_memory</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Persistent path: ./cache/chroma_db</p>
+          </div>
         </div>
       </div>
-    </div>
-  </main>
+    </section>
+
+    <!-- TAB 5: PORTFOLIO REPORT DOWNLOADS -->
+    <section id="portfolioTab" class="tab-pane">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title"><i class="fa-solid fa-box-archive"></i> Portfolio Artifact Library</h2>
+            <p class="panel-desc">Download generated PDF reports, Markdown sources, and evaluation scorecards.</p>
+          </div>
+          <button class="btn-secondary-sm" onclick="loadSavedReports()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Library</button>
+        </div>
+
+        <div id="savedReportsContainer" class="artifact-grid">
+          <div class="empty-state">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Loading portfolio artifacts...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <p>Autonomous Financial Research Agent for BFSI • Built with Google Gemini API & ChromaDB</p>
+  </footer>
 
   <script src="app.js"></script>
 </body>
