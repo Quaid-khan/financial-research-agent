@@ -61,10 +61,27 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
             try:
                 data = json.loads(post_body) if post_body else {}
                 ticker_input = data.get("ticker", "JPM").strip().upper()
-                task = data.get("task", f"Analyze financial performance and disclosures for {ticker_input}.")
+                task_input = data.get("task", "").strip()
 
-                # Map common query names like GOOGLE -> GOOGL
+                # 1. Query Routing & Synchronization Engine
                 ticker = "GOOGL" if ticker_input in ["GOOGLE", "GOOG"] else ticker_input
+
+                # If prompt explicitly mentions another entity name, align ticker to prompt target
+                if not task_input:
+                    task = f"Analyze financial performance, 10-K revenue disclosures, and risk factors for {ticker}."
+                else:
+                    # Synchronize ticker if task prompt explicitly targets another company
+                    if ("JPMORGAN" in task_input.upper() or "CHASE" in task_input.upper()) and ticker != "JPM":
+                        logger.info(f"Query Router: Task specified JPMorgan Chase, overriding ticker '{ticker}' -> 'JPM'")
+                        ticker = "JPM"
+                        task = task_input
+                    elif ("APPLE" in task_input.upper()) and ticker != "AAPL":
+                        logger.info(f"Query Router: Task specified Apple Inc., overriding ticker '{ticker}' -> 'AAPL'")
+                        ticker = "AAPL"
+                        task = task_input
+                    else:
+                        # Ensure task prompt mentions target ticker
+                        task = task_input.replace("JPMorgan Chase", ticker).replace("JPM", ticker)
 
                 res = self.run_agent_research(ticker=ticker, task=task)
                 self.send_json_response(res)
@@ -126,9 +143,9 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
     def run_agent_research(self, ticker: str, task: str) -> dict:
         """Run REAL live agent research with real HTTP requests to SEC EDGAR API and Gemini API."""
         start_t = time.time()
-        logger.info(f"[LIVE REAL EXECUTION] Running live agent research for ticker '{ticker}'")
+        logger.info(f"[LIVE REAL EXECUTION] Running live agent research for ticker '{ticker}' (Task: '{task}')")
 
-        # 1. Real Live SEC EDGAR API Call to https://data.sec.gov (passing positional parameter)
+        # 1. Real Live SEC EDGAR API Call to https://data.sec.gov
         fin_statements_raw = get_financial_statements(ticker, "all")
         fin_data = json.loads(fin_statements_raw)
 
@@ -147,7 +164,25 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
         # 2. Real Live Transcript API / Dataset Call
         transcript_raw = get_earnings_transcript(ticker=ticker, year=2024, quarter=4)
         transcript_data = json.loads(transcript_raw)
-        guidance_text = transcript_data.get("executive_remarks", "")[:300] if transcript_data.get("status") == "success" else "Executive remarks available in earnings call transcript."
+        
+        evidence_list = []
+        evidence_sec = EvidenceItem(
+            text=rev_text,
+            source=f"SEC EDGAR Company Facts (CIK {fin_data.get('cik', 'N/A')})",
+            source_type="sec_filing",
+            ticker=ticker
+        )
+        evidence_list.append(evidence_sec)
+
+        if transcript_data.get("status") == "success":
+            guidance_text = transcript_data.get("executive_remarks", "")[:300]
+            evidence_transcript = EvidenceItem(
+                text=f"{ticker} Q4 2024 Executive Guidance: {guidance_text[:150]}...",
+                source=f"{ticker} Q4 2024 Earnings Transcript",
+                source_type="earnings_transcript",
+                ticker=ticker
+            )
+            evidence_list.append(evidence_transcript)
 
         # 3. Real ReAct Agent Execution using live Gemini LLM API call if API key present, or real agent step execution
         agent = ReActAgent(registry=default_registry, max_steps=4)
@@ -172,7 +207,7 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
                     "step_number": 2,
                     "thought": f"Querying earnings call transcript for {ticker}.",
                     "action": type("Action", (), {"name": "get_earnings_transcript", "arguments": {"ticker": ticker, "year": 2024, "quarter": 4}, "model_dump": lambda self: {"name": "get_earnings_transcript", "arguments": {"ticker": ticker, "year": 2024, "quarter": 4}}})(),
-                    "observation": f"Earnings transcript fetched for {ticker}.",
+                    "observation": f"Transcript API returned status '{transcript_data.get('status')}'.",
                     "is_final": False,
                     "final_answer": None,
                     "tokens_used": 250
@@ -191,23 +226,10 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
             )
 
         # 4. Synthesize Real Findings
-        evidence_sec = EvidenceItem(
-            text=rev_text,
-            source=f"SEC EDGAR Company Facts (CIK {fin_data.get('cik', 'N/A')})",
-            source_type="sec_filing",
-            ticker=ticker
-        )
-        evidence_transcript = EvidenceItem(
-            text=f"{ticker} Q4 2024 Executive Guidance: {guidance_text[:150]}...",
-            source=f"{ticker} Q4 2024 Earnings Transcript",
-            source_type="earnings_transcript",
-            ticker=ticker
-        )
-
         synthesis_engine = SynthesisEngine(tolerance_pct=1.0)
         synthesis = synthesis_engine.synthesize(
             task=task,
-            evidence_list=[evidence_sec, evidence_transcript],
+            evidence_list=evidence_list,
             use_llm=False
         )
 
@@ -258,16 +280,16 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
 def run_web_server(port: int = 5000):
     server_address = ("127.0.0.1", port)
     httpd = HTTPServer(server_address, FinancialAgentWebHandler)
-    print(f"\n========================================================")
-    print(f"  Autonomous Financial Research Agent Web UI Dashboard  ")
-    print(f"========================================================")
-    print(f"  URL: http://127.0.0.1:{port}")
-    print(f"  Serving static files from: {STATIC_DIR}")
-    print(f"  Press Ctrl+C to stop the server.\n")
+    print(f"\n========================================================", flush=True)
+    print(f"  Autonomous Financial Research Agent Web UI Dashboard  ", flush=True)
+    print(f"========================================================", flush=True)
+    print(f"  URL: http://127.0.0.1:{port}", flush=True)
+    print(f"  Serving static files from: {STATIC_DIR}", flush=True)
+    print(f"  Press Ctrl+C to stop the server.\n", flush=True)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print("\nWeb dashboard server stopped.")
+        print("\nWeb dashboard server stopped.", flush=True)
 
 
 if __name__ == "__main__":

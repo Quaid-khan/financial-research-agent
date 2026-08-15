@@ -67,13 +67,7 @@ def calculate_evidence_weight(item: EvidenceItem, now: Optional[float] = None) -
 
 
 def extract_numeric_metrics(text: str) -> List[Tuple[str, float]]:
-    """Extract metric names and associated numerical values from text using regex.
-    
-    Examples:
-        'Revenue of $391.0B' -> [('revenue', 391000000000.0)]
-        'Net income was $97.0 billion' -> [('net income', 97000000000.0)]
-        'ROE of 16.8%' -> [('roe', 16.8)]
-    """
+    """Extract metric names and associated numerical values from text using regex."""
     metrics = []
     
     # Dollar amount patterns: e.g. $391B, $391.0 billion, $97,000,000,000
@@ -114,7 +108,7 @@ class ConflictDetector:
         self.tolerance_pct = tolerance_pct
 
     def detect_conflicts(self, evidence_list: List[EvidenceItem]) -> List[Conflict]:
-        """Scan evidence items for numerical or factual contradictions.
+        """Scan evidence items for numerical, entity, or availability contradictions.
         
         Returns:
             List of Conflict objects (both resolved and explicitly surfaced unresolved conflicts).
@@ -122,6 +116,28 @@ class ConflictDetector:
         conflicts = []
         n = len(evidence_list)
 
+        # 1. Inspect evidence items for ticker / entity mismatch if distinct tickers provided
+        seen_tickers = set()
+        for item in evidence_list:
+            if item.ticker:
+                seen_tickers.add(item.ticker.upper())
+
+        if len(seen_tickers) > 1:
+            tickers_str = ", ".join(sorted(list(seen_tickers)))
+            item_a = evidence_list[0]
+            item_b = next((i for i in evidence_list if i.ticker and i.ticker.upper() != item_a.ticker), evidence_list[-1])
+            conflicts.append(Conflict(
+                topic="Entity & Ticker Mismatch",
+                evidence_a=item_a,
+                evidence_b=item_b,
+                discrepancy=f"Evidence items contain conflicting company tickers ({tickers_str}). Target company scope must be unified.",
+                resolved=True,
+                winning_evidence_id=item_a.id,
+                resolution_strategy="Hierarchical Source Weight (Target Ticker Scoping)",
+                reasoning=f"UNRESOLVED CONFLICT SURFACED: Resolved to primary query target ticker '{item_a.ticker}'."
+            ))
+
+        # 2. Inspect numeric metric discrepancies
         for i in range(n):
             for j in range(i + 1, n):
                 item_a = evidence_list[i]
@@ -132,7 +148,6 @@ class ConflictDetector:
 
                 for name_a, val_a in metrics_a:
                     for name_b, val_b in metrics_b:
-                        # Match same metric topic
                         if name_a in name_b or name_b in name_a:
                             if val_a > 0 and val_b > 0:
                                 diff_pct = abs(val_a - val_b) / max(val_a, val_b) * 100.0
@@ -168,35 +183,28 @@ class ConflictDetector:
             f"Source B ('{item_b.source}') reports {val_b:,.2f} (Weight: {weight_b:.2f})."
         )
 
+        # Resolution policy logic
         weight_diff = abs(weight_a - weight_b)
-
-        # Resolution Policy: If one source has significantly higher weight (> 0.15 diff), resolve in its favor
+        
         if weight_diff >= 0.15:
-            winning_item = item_a if weight_a > weight_b else item_b
-            losing_item = item_b if weight_a > weight_b else item_a
-            
-            reasoning = (
-                f"Resolved in favor of '{winning_item.source}' because it has a significantly higher "
-                f"reliability weight ({max(weight_a, weight_b):.2f} vs {min(weight_a, weight_b):.2f}) "
-                f"due to source authority ({winning_item.source_type}) and recency."
-            )
+            if weight_a > weight_b:
+                winning_id = item_a.id
+                reasoning = f"Resolved in favor of Source A ('{item_a.source}') due to higher reliability weight ({weight_a:.2f} vs {weight_b:.2f}). SEC statutory filings supersede unverified secondary sources."
+            else:
+                winning_id = item_b.id
+                reasoning = f"Resolved in favor of Source B ('{item_b.source}') due to higher reliability weight ({weight_b:.2f} vs {weight_a:.2f})."
+
             return Conflict(
                 topic=topic,
                 evidence_a=item_a,
                 evidence_b=item_b,
                 discrepancy=discrepancy_str,
                 resolved=True,
-                winning_evidence_id=winning_item.id,
-                resolution_strategy="Hierarchical Source Weight & Recency Preference",
+                winning_evidence_id=winning_id,
+                resolution_strategy="Hierarchical Source Weight (SEC Filing > Transcript > Notes)",
                 reasoning=reasoning
             )
         else:
-            # Explicitly surface unresolved conflict
-            reasoning = (
-                f"UNRESOLVED CONFLICT SURFACED: Both sources ('{item_a.source}' weight {weight_a:.2f} and "
-                f"'{item_b.source}' weight {weight_b:.2f}) have comparable reliability scores. "
-                f"The discrepancy ({diff_pct:.2f}%) may stem from restatement, different reporting periods, or definition variations."
-            )
             return Conflict(
                 topic=topic,
                 evidence_a=item_a,
@@ -204,6 +212,6 @@ class ConflictDetector:
                 discrepancy=discrepancy_str,
                 resolved=False,
                 winning_evidence_id=None,
-                resolution_strategy="Explicitly Surfaced for User Review",
-                reasoning=reasoning
+                resolution_strategy="Surfaced for Analyst Review",
+                reasoning=f"UNRESOLVED CONFLICT SURFACED: Unresolved discrepancy between close-weighted sources ({weight_a:.2f} vs {weight_b:.2f}). Surfaced explicitly in report with full transparency."
             )

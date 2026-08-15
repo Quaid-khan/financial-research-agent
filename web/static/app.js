@@ -2,7 +2,17 @@ let allScorecardMetrics = [];
 
 function setTicker(ticker) {
   document.getElementById('tickerInput').value = ticker;
-  document.getElementById('taskInput').value = `Analyze financial performance, 10-K revenue disclosures, and CET1 capital ratio for ${ticker}.`;
+  
+  const names = {
+    'JPM': 'JPMorgan Chase & Co.',
+    'BAC': 'Bank of America Corp',
+    'AAPL': 'Apple Inc.',
+    'MSFT': 'Microsoft Corporation',
+    'NVDA': 'NVIDIA Corporation',
+    'GOOGL': 'Alphabet Inc.'
+  };
+  const cName = names[ticker] || ticker;
+  document.getElementById('taskInput').value = `Analyze financial performance, 10-K revenue disclosures, and risk factors for ${cName} (${ticker}).`;
   
   document.querySelectorAll('.chip').forEach(chip => {
     if (chip.textContent.includes(ticker)) {
