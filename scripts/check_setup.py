@@ -3,7 +3,7 @@
 
 Verifies:
 1. Environment variables and .env file configuration (GEMINI_API_KEY, SEC_EDGAR_USER_AGENT).
-2. Google Gemini API connectivity & model availability.
+2. Google Gemini API connectivity & model availability using google.genai.
 3. SEC EDGAR User-Agent compliance.
 4. Local Sentence-Transformers embedding model loading and inference.
 5. ChromaDB persistent storage initialization and write test.
@@ -62,12 +62,15 @@ def check_gemini_api() -> bool:
         return True
 
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-        model = genai.GenerativeModel(model_name)
-        response = model.generate_content("Financial research system test ping. Reply with 'OK'.")
-        print(f"  [PASS] Gemini API connection verified using '{model_name}'. Response: {response.text.strip()[:40]}")
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        model_name = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+        response = client.models.generate_content(
+            model=model_name,
+            contents="Financial research system test ping. Reply with 'OK'."
+        )
+        reply_text = (response.text or "").strip()[:40]
+        print(f"  [PASS] Gemini API connection verified using '{model_name}'. Response: {reply_text}")
         return True
     except Exception as err:
         print(f"  [FAIL] Gemini API connection failed: {err}")

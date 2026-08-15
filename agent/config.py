@@ -32,8 +32,8 @@ class Settings(BaseModel):
         validate_default=True
     )
     gemini_model: str = Field(
-        default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
-        description="Gemini LLM model identifier (Default: gemini-2.0-flash)."
+        default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
+        description="Gemini LLM model identifier (Default: gemini-3.6-flash)."
     )
 
     # SEC EDGAR Requirements
