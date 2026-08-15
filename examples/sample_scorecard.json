@@ -1,0 +1,240 @@
+{
+  "overall_score": 98.81,
+  "grade": "A+",
+  "category_scores": {
+    "Factual Accuracy": 100.0,
+    "Completeness": 100.0,
+    "Reasoning Quality": 100.0,
+    "Conflict Handling": 100.0,
+    "Memory Utilization": 100.0,
+    "Report Quality": 91.67,
+    "Efficiency & Budget": 100.0
+  },
+  "metric_results": [
+    {
+      "metric_name": "citation_coverage",
+      "category": "Factual Accuracy",
+      "score": 100.0,
+      "description": "Percentage of synthesized claims backed by explicit source citations.",
+      "details": {
+        "total_claims": 2,
+        "cited_claims": 2
+      }
+    },
+    {
+      "metric_name": "citation_correctness",
+      "category": "Factual Accuracy",
+      "score": 100.0,
+      "description": "Factual alignment accuracy between claim statements and cited sources.",
+      "details": {
+        "evaluated_claims": 2,
+        "supported_claims": 2
+      }
+    },
+    {
+      "metric_name": "numeric_accuracy",
+      "category": "Factual Accuracy",
+      "score": 100.0,
+      "description": "Precision of extracted numbers against raw statutory disclosures.",
+      "details": {
+        "numeric_claims": 2,
+        "accurate_claims": 2
+      }
+    },
+    {
+      "metric_name": "section_completeness",
+      "category": "Completeness",
+      "score": 100.0,
+      "description": "Coverage of mandatory 7 institutional research report sections.",
+      "details": {
+        "found_sections": [
+          "Executive Summary",
+          "Company Overview",
+          "Financial Analysis",
+          "Key Synthesized Findings",
+          "Risk Factors",
+          "Conflicting Information",
+          "Sources & Citations"
+        ],
+        "missing_sections": []
+      }
+    },
+    {
+      "metric_name": "financial_depth",
+      "category": "Completeness",
+      "score": 100.0,
+      "description": "Breadth of distinct financial statement metrics and ratios analyzed.",
+      "details": {
+        "distinct_metrics_count": 6,
+        "metrics_found": [
+          "revenue",
+          "net income",
+          "roe",
+          "cet1",
+          "margin",
+          "nim"
+        ]
+      }
+    },
+    {
+      "metric_name": "source_breadth",
+      "category": "Completeness",
+      "score": 100.0,
+      "description": "Diversity of data source types consulted during research.",
+      "details": {
+        "unique_sources_count": 2,
+        "sources": [
+          "SEC EDGAR 10-K",
+          "Q4 Earnings Call"
+        ]
+      }
+    },
+    {
+      "metric_name": "react_efficiency",
+      "category": "Reasoning Quality",
+      "score": 100.0,
+      "description": "ReAct loop step count efficiency relative to optimal trajectory length.",
+      "details": {
+        "total_steps": 3,
+        "max_steps": 5,
+        "completed": true
+      }
+    },
+    {
+      "metric_name": "tool_selection_appropriateness",
+      "category": "Reasoning Quality",
+      "score": 100.0,
+      "description": "Proportion of agent reasoning steps issuing valid tool calls.",
+      "details": {
+        "total_steps": 3,
+        "valid_tool_calls": 3
+      }
+    },
+    {
+      "metric_name": "error_recovery_rate",
+      "category": "Reasoning Quality",
+      "score": 100.0,
+      "description": "Graceful error handling and recovery rate when tool calls fail.",
+      "details": {
+        "error_steps_count": 0,
+        "recovered": true
+      }
+    },
+    {
+      "metric_name": "conflict_detection_rate",
+      "category": "Conflict Handling",
+      "score": 100.0,
+      "description": "Detection rate of numerical or narrative discrepancies across sources.",
+      "details": {
+        "detected_conflicts_count": 0
+      }
+    },
+    {
+      "metric_name": "conflict_transparency",
+      "category": "Conflict Handling",
+      "score": 100.0,
+      "description": "Transparency in surfacing unresolved conflicts with detailed reasoning.",
+      "details": {
+        "unresolved_conflicts": 0,
+        "surfaced": true
+      }
+    },
+    {
+      "metric_name": "working_memory_efficiency",
+      "category": "Memory Utilization",
+      "score": 100.0,
+      "description": "Working memory context window economy and truncation efficiency.",
+      "details": {
+        "total_tokens_consumed": 1320
+      }
+    },
+    {
+      "metric_name": "episodic_recall_accuracy",
+      "category": "Memory Utilization",
+      "score": 100.0,
+      "description": "Accuracy of recalling sub-task findings within the active session.",
+      "details": {
+        "memory_recall_calls": 0
+      }
+    },
+    {
+      "metric_name": "longterm_memory_hit_rate",
+      "category": "Memory Utilization",
+      "score": 100.0,
+      "description": "Relevance hit rate of persistent ChromaDB cross-session queries.",
+      "details": {
+        "longterm_search_calls": 0
+      }
+    },
+    {
+      "metric_name": "readability_score",
+      "category": "Report Quality",
+      "score": 75.0,
+      "description": "Readability, structural flow, and textual clarity of report prose.",
+      "details": {
+        "word_count": 263,
+        "line_count": 39
+      }
+    },
+    {
+      "metric_name": "professional_tone",
+      "category": "Report Quality",
+      "score": 100.0,
+      "description": "Adherence to institutional equity research tone and terminology.",
+      "details": {
+        "informal_words_found": []
+      }
+    },
+    {
+      "metric_name": "formatting_correctness",
+      "category": "Report Quality",
+      "score": 100.0,
+      "description": "Syntax correctness for Markdown headings, tables, and typography.",
+      "details": {
+        "has_headers": true,
+        "has_table": true,
+        "has_bold": true
+      }
+    },
+    {
+      "metric_name": "token_efficiency",
+      "category": "Efficiency & Budget",
+      "score": 100.0,
+      "description": "Token economy relative to research output depth.",
+      "details": {
+        "total_tokens": 1320
+      }
+    },
+    {
+      "metric_name": "execution_latency",
+      "category": "Efficiency & Budget",
+      "score": 100.0,
+      "description": "Wall-clock execution speed across data collection and synthesis.",
+      "details": {
+        "duration_seconds": 4.2
+      }
+    },
+    {
+      "metric_name": "api_call_efficiency",
+      "category": "Efficiency & Budget",
+      "score": 100.0,
+      "description": "API request call count economy across SEC EDGAR and Gemini model calls.",
+      "details": {
+        "api_calls_count": 3
+      }
+    },
+    {
+      "metric_name": "cost_estimate",
+      "category": "Efficiency & Budget",
+      "score": 100.0,
+      "description": "Estimated API execution cost in USD (Gemini Free Tier = $0.00).",
+      "details": {
+        "estimated_usd_cost": 0.0,
+        "llm_tier": "Google Gemini Free Tier"
+      }
+    }
+  ],
+  "recommendations": [
+    "Improve `readability_score` (Score: 75.0/100): Readability, structural flow, and textual clarity of report prose."
+  ]
+}
