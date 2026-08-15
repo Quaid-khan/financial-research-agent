@@ -1,6 +1,6 @@
 # Autonomous Financial Research Agent for BFSI
 
-An autonomous, multi-tool AI agent system designed for Banking, Financial Services, and Insurance (BFSI) use cases. Powered by Google Gemini (Free Tier), this agent conducts deep financial research across SEC filings (10-K, 10-Q), earnings call transcripts, market data, and regulatory disclosures to produce synthesized, publication-grade financial analysis reports.
+An autonomous, multi-tool AI agent system designed for Banking, Financial Services, and Insurance (BFSI) use cases. Powered by Google Gemini (`gemini-3.6-flash`), this agent conducts deep financial research across SEC filings (10-K, 10-Q), earnings call transcripts, market data, and regulatory disclosures to produce synthesized, publication-grade financial analysis reports.
 
 ## 🎯 Key Objectives & Capabilities
 
@@ -16,8 +16,10 @@ An autonomous, multi-tool AI agent system designed for Banking, Financial Servic
 ```
 financial-research-agent/
 ├── agent/
+│   ├── core.py        # ReAct control loop, AgentState, AgentStep, ToolCall
 │   ├── config.py      # Environment validation & Pydantic settings schema
-│   ├── tools/         # Autonomous agent tools (SEC APIs, market data, parsers)
+│   ├── tools/
+│   │   └── registry.py# ToolRegistry, ToolDefinition, FunctionDeclaration export
 │   ├── memory/        # Episodic, semantic, and working memory stores
 │   ├── synthesis/     # Multi-source intelligence & reconciliation engines
 │   └── reporting/     # Structured research report generators & formatters
@@ -25,8 +27,11 @@ financial-research-agent/
 │   └── challenges/    # Benchmark evaluation cases and financial test suites
 ├── scripts/
 │   └── check_setup.py # System setup & environment verification script
-├── tests/             # Unit and integration test suite
-├── examples/          # Executable usage scripts and end-to-end demonstrations
+├── tests/
+│   ├── test_config.py     # Config validation unit tests
+│   └── test_react_loop.py # ReAct loop & ToolRegistry unit tests
+├── examples/
+│   └── demo_agent.py  # CLI harness demo testing agent against stub tools
 ├── cache/             # Local data and document cache
 ├── .env.example       # Environment configuration template
 ├── CHANGELOG.md       # Version history and phase progression tracking
@@ -37,7 +42,8 @@ financial-research-agent/
 ## 🛠️ Tech Stack & Conventions
 
 - **Language**: Python 3.11+
-- **LLM Engine**: Google Gemini API (`gemini-2.0-flash`) via `google-genai` / `google-generativeai`
+- **LLM Engine**: Google Gemini API (`gemini-3.6-flash`) via `google-genai`
+- **Control Flow**: ReAct (Reason-Act-Observe) pattern with structured scratchpad tracing
 - **Data Models**: Pydantic v2 for strict type safety and schema validation
 - **Configuration**: `python-dotenv` for secure environment variable management
 - **Vector DB**: ChromaDB for local embedding storage
@@ -60,57 +66,36 @@ financial-research-agent/
    cd financial-research-agent
    ```
 
-2. **Activate the Virtual Environment**:
-   - **Windows (PowerShell)**:
-     ```powershell
-     .\venv\Scripts\Activate.ps1
-     ```
-   - **Linux / macOS**:
-     ```bash
-     source venv/bin/activate
-     ```
+2. **Activate Virtual Environment**:
+   ```powershell
+   .\venv\Scripts\Activate.ps1
+   ```
 
 3. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Environment Configuration**:
-   Create a `.env` file from the provided `.env.example` template:
+4. **Verify System Setup**:
    ```bash
-   cp .env.example .env
+   python scripts/check_setup.py
    ```
 
-### 🔑 Environment Variables & API Key Overview
-
-| Variable | Description | Source / Requirement |
-| :--- | :--- | :--- |
-| `GEMINI_API_KEY` | Google Gemini API key for LLM reasoning | **Required (Free Tier)**. Obtain at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
-| `GEMINI_MODEL` | Gemini LLM model identifier | Optional (Default: `gemini-2.0-flash`) |
-| `SEC_EDGAR_USER_AGENT` | User-Agent required by SEC EDGAR Fair Access rules | **Required**. Format: `YourName your.email@example.com` |
-| `EMBEDDING_MODEL` | Local HuggingFace embedding model | Optional (Default: `all-MiniLM-L6-v2`, local execution) |
-| `CHROMA_DB_PATH` | Local ChromaDB vector database directory | Optional (Default: `./cache/chroma_db`) |
-| `FMP_API_KEY` | Financial Modeling Prep key for transcripts | Optional (Free tier 250 req/day at [financialmodelingprep.com](https://site.financialmodelingprep.com/)) |
-| `ALPHA_VANTAGE_API_KEY`| Alpha Vantage key for market data | Optional (Free tier 25 req/day at [alphavantage.co](https://www.alphavantage.co/)) |
-| `FINNHUB_API_KEY` | Finnhub key for financial news & earnings | Optional (Free tier at [finnhub.io](https://finnhub.io/)) |
-
-### 🧪 System Setup Diagnostic Verification
-
-Run the automated diagnostic check script at any time to verify your environment, API keys, local embedding model, and ChromaDB persistent storage:
-
-```bash
-python scripts/check_setup.py
-```
+5. **Run ReAct Agent Demo Harness**:
+   ```bash
+   python examples/demo_agent.py
+   ```
 
 ## 📜 Roadmap & Build Phases
 
-- [x] **Phase 0**: Project Setup & Environment Configuration Engine (Google Gemini Free Tier)
-- [ ] **Phase 1**: Tool Registry & SEC Filing Retrieval Engine
-- [ ] **Phase 2**: Earnings Call & Narrative Analysis Engine
-- [ ] **Phase 3**: Agent Memory & State Management
-- [ ] **Phase 4**: Multi-Source Synthesis & Reasoning Pipeline
-- [ ] **Phase 5**: Report Generation & Delivery Interface
-- [ ] **Phase 6**: Financial Evaluation & Benchmark Suite
+- [x] **Phase 0**: Project Setup & Environment Configuration Engine
+- [x] **Phase 1**: ReAct Core Engine & Tool Registry Architecture
+- [ ] **Phase 2**: SEC EDGAR Filing Retrieval & Financial Ratio Tools
+- [ ] **Phase 3**: Earnings Call & Narrative Analysis Engine
+- [ ] **Phase 4**: Agent Memory & State Management
+- [ ] **Phase 5**: Multi-Source Synthesis & Reasoning Pipeline
+- [ ] **Phase 6**: Report Generation & Delivery Interface
+- [ ] **Phase 7**: Financial Evaluation & Benchmark Suite
 
 ## 📄 License
 
