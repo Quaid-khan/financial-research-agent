@@ -22,3 +22,6 @@ httpx>=0.25.0
 # Testing & Quality Assurance
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
+
+# Deployment & Gradio Interface
+gradio>=4.0.0
