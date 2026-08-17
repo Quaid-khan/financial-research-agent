@@ -301,12 +301,13 @@ class FinancialAgentWebHandler(SimpleHTTPRequestHandler):
 
 
 def run_web_server(port: int = 5000):
-    server_address = ("127.0.0.1", port)
+    # Bind to all interfaces so managed hosts such as Koyeb can route traffic in.
+    server_address = ("0.0.0.0", port)
     httpd = HTTPServer(server_address, FinancialAgentWebHandler)
     print(f"\n========================================================", flush=True)
     print(f"  Autonomous Financial Research Agent Web UI Dashboard  ", flush=True)
     print(f"========================================================", flush=True)
-    print(f"  URL: http://127.0.0.1:{port}", flush=True)
+    print(f"  Listening on 0.0.0.0:{port}", flush=True)
     print(f"  Serving static files from: {STATIC_DIR}", flush=True)
     print(f"  Press Ctrl+C to stop the server.\n", flush=True)
     try:
