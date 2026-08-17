@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from web.app import run_web_server, execute_research_pipeline
+import web.app as web_app
 
 # Try importing gradio if running on Hugging Face Gradio SDK
 try:
@@ -19,12 +19,12 @@ except ImportError:
 
 if HAS_GRADIO:
     # Start background HTTP web server on port 8050
-    t = threading.Thread(target=run_web_server, args=(8050,), daemon=True)
+    t = threading.Thread(target=web_app.run_web_server, args=(8050,), daemon=True)
     t.start()
 
     def research_fn(ticker: str, task: str):
         try:
-            report_data, scorecard_data, state_data = execute_research_pipeline(ticker, task)
+            report_data, scorecard_data, state_data = web_app.execute_research_pipeline(ticker, task)
             return report_data.get("markdown_content", "Research brief generated.")
         except Exception as err:
             return f"Error executing research task: {err}"
@@ -46,4 +46,4 @@ if HAS_GRADIO:
 else:
     port = int(os.environ.get("PORT", 8050))
     print(f"Starting QK Researcher Web Server on port {port}...")
-    run_web_server(port=port)
+    web_app.run_web_server(port=port)
