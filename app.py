@@ -10,24 +10,38 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import web.app as web_app
 
-# Try importing gradio if running on Hugging Face Gradio SDK
+# Try importing spaces & gradio for Hugging Face ZeroGPU Free Tier
 try:
     import gradio as gr
     HAS_GRADIO = True
 except ImportError:
     HAS_GRADIO = False
 
+try:
+    import spaces
+    HAS_SPACES = True
+except ImportError:
+    HAS_SPACES = False
+
 if HAS_GRADIO:
     # Start background HTTP web server on port 8050
     t = threading.Thread(target=web_app.run_web_server, args=(8050,), daemon=True)
     t.start()
 
-    def research_fn(ticker: str, task: str):
+    def _execute_research(ticker: str, task: str) -> str:
         try:
             report_data, scorecard_data, state_data = web_app.execute_research_pipeline(ticker, task)
             return report_data.get("markdown_content", "Research brief generated.")
         except Exception as err:
             return f"Error executing research task: {err}"
+
+    if HAS_SPACES:
+        @spaces.GPU
+        def research_fn(ticker: str, task: str) -> str:
+            return _execute_research(ticker, task)
+    else:
+        def research_fn(ticker: str, task: str) -> str:
+            return _execute_research(ticker, task)
 
     with gr.Blocks(title="QK Researcher - Autonomous Financial Intelligence") as demo:
         gr.Markdown("# 📊 QK Researcher — Autonomous Financial Intelligence Engine")
