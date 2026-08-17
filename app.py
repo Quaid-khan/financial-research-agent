@@ -42,7 +42,8 @@ if HAS_GRADIO:
         
         btn.click(fn=research_fn, inputs=[ticker_input, task_input], outputs=output)
 
-    demo.launch()
+    port = int(os.environ.get("PORT", 7860))
+    demo.launch(server_name="0.0.0.0", server_port=port, ssr_mode=False)
 else:
     port = int(os.environ.get("PORT", 8050))
     print(f"Starting QK Researcher Web Server on port {port}...")
