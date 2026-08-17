@@ -3,7 +3,8 @@ title: QK Researcher - Autonomous Financial Intelligence
 emoji: 📊
 colorFrom: blue
 colorTo: indigo
-sdk: static
+sdk: docker
+app_port: 7860
 pinned: false
 ---
 
