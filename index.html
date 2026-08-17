@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QK Researcher | Institutional Financial Research</title>
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icon Toolkit -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <!-- Favicon & QK Researcher Brand Icon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" type="image/svg+xml" href="favicon.svg">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    :root {
+      --bg-app: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-subtle: #f1f5f9;
+      --bg-input: #ffffff;
+      --bg-hover: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --border-color: #e2e8f0;
+      --border-focus: #2563eb;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --accent-blue: #2563eb;
+      --accent-blue-hover: #1d4ed8;
+      --accent-blue-light: #eff6ff;
+      --emerald-bg: #dcfce7;
+      --emerald-text: #15803d;
+      --emerald-bar: #22c55e;
+      --rose-bg: #ffe4e6;
+      --rose-text: #be123c;
+      --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, monospace;
+      --sidebar-width: 240px;
+      --header-height: 64px;
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #090d16;
+      --bg-sidebar: #0f172a;
+      --bg-card: #161f33;
+      --bg-card-subtle: #1e293b;
+      --bg-input: #0f172a;
+      --bg-hover: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --border-color: #1e293b;
+      --border-focus: #38bdf8;
+      --accent-blue: #38bdf8;
+      --accent-blue-hover: #0284c7;
+      --accent-blue-light: rgba(56, 189, 248, 0.12);
+      --emerald-bg: rgba(34, 197, 94, 0.15);
+      --emerald-text: #4ade80;
+      --emerald-bar: #22c55e;
+      --rose-bg: rgba(244, 63, 94, 0.15);
+      --rose-text: #fda4af;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg-app); color: var(--text-main); font-family: var(--font-sans); line-height: 1.5; min-height: 100vh; display: flex; transition: background-color 0.25s ease, color 0.25s ease; }
+
+    .app-sidebar { width: var(--sidebar-width); background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 50; }
+    .sidebar-header { height: var(--header-height); padding: 0 24px; display: flex; align-items: center; gap: 12px; }
+    .brand-name { font-size: 1.25rem; font-weight: 800; color: var(--accent-blue); letter-spacing: -0.02em; }
+    .sidebar-nav { padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); border: none; background: none; cursor: pointer; width: 100%; text-align: left; transition: all 0.15s ease; }
+    .nav-link:hover { background-color: var(--bg-hover); color: var(--text-main); }
+    .nav-link.active { background-color: var(--accent-blue-light); color: var(--accent-blue); }
+
+    .app-main { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .top-navbar { height: var(--header-height); background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+    .search-bar-wrapper { position: relative; width: 380px; }
+    .search-bar-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim); }
+    .search-input { width: 100%; height: 38px; padding: 0 42px 0 38px; background-color: var(--bg-app); border: 1px solid var(--border-color); border-radius: 8px; font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-main); outline: none; }
+    .search-shortcut { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: var(--bg-card-subtle); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; color: var(--text-dim); }
+    .navbar-actions { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+    .status-badge { display: flex; align-items: center; gap: 8px; background-color: var(--emerald-bg); color: var(--emerald-text); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+    .pulse-dot { width: 8px; height: 8px; background-color: var(--emerald-bar); border-radius: 50%; }
+    .theme-toggle-btn { display: flex; align-items: center; gap: 8px; background-color: var(--bg-card-subtle); border: 1px solid var(--border-color); color: var(--text-main); padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+
+    .workspace-content { padding: 32px; max-width: 1280px; width: 100%; margin: 0 auto; flex: 1; }
+    .greeting-title { font-size: 2rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.03em; margin-bottom: 4px; }
+    .greeting-subtitle { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 28px; }
+
+    .overview-top-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; margin-bottom: 28px; }
+    .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-sm); }
+    .card-title { font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+    .form-grid { display: grid; grid-template-columns: 180px 1fr; gap: 16px; margin-bottom: 16px; }
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .select-input, .textarea-input { background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-family: var(--font-sans); font-size: 0.88rem; color: var(--text-main); outline: none; }
+    .textarea-input { min-height: 90px; resize: vertical; }
+    .textarea-wrapper { position: relative; }
+    .char-counter { position: absolute; right: 12px; bottom: 8px; font-size: 0.72rem; color: var(--text-dim); }
+    .form-bottom-bar { display: flex; align-items: center; justify-content: space-between; }
+    .suggestions-group { display: flex; align-items: center; gap: 8px; }
+    .suggestions-label { font-size: 0.78rem; color: var(--text-dim); }
+    .chip-btn { background-color: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: 20px; padding: 5px 12px; font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+    .chip-btn:hover, .chip-btn.active { border-color: var(--accent-blue); color: var(--accent-blue); background-color: var(--accent-blue-light); }
+    .btn-primary { background-color: var(--accent-blue); color: #ffffff; border: none; border-radius: 8px; padding: 11px 22px; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary:hover { background-color: var(--accent-blue-hover); }
+
+    .health-metrics-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+    .health-item { display: flex; flex-direction: column; gap: 6px; }
+    .health-item-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; }
+    .health-item-label { color: var(--text-muted); }
+    .health-item-val { color: var(--text-main); font-weight: 700; }
+    .progress-track { height: 6px; background-color: var(--bg-card-subtle); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background-color: var(--emerald-bar); border-radius: 3px; }
+    .card-link { font-size: 0.85rem; font-weight: 700; color: var(--accent-blue); text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+
+    .brief-card { margin-bottom: 28px; }
+    .brief-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .company-brand-row { display: flex; align-items: center; gap: 16px; }
+    .company-logo-badge { width: 48px; height: 48px; background-color: #0f172a; color: #ffffff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; }
+    .company-info h3 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); line-height: 1.3; }
+    .company-info p { font-size: 0.8rem; color: var(--text-muted); }
+    .metric-pills { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .metric-pill-btn { background: var(--bg-card-subtle); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+    .metric-pill-btn.active { background-color: var(--accent-blue-light); border-color: var(--accent-blue); color: var(--accent-blue); }
+    .verification-tag { background-color: var(--emerald-bg); color: var(--emerald-text); padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+
+    .chart-container { height: 180px; position: relative; margin: 10px 0 20px 0; }
+    .chart-svg { width: 100%; height: 100%; overflow: visible; }
+    .brief-footer-row { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-dim); }
+
+    .filings-table-wrapper { width: 100%; overflow-x: auto; margin-bottom: 14px; }
+    .filings-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+    .filings-table th { font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; border-bottom: 1px solid var(--border-color); }
+    .filings-table td { padding: 12px 14px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+    .source-link { color: var(--accent-blue); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .trace-feed { display: flex; flex-direction: column; gap: 16px; }
+    .trace-card { background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+    .empty-state i { font-size: 2.5rem; color: var(--text-dim); margin-bottom: 16px; }
+    .empty-state h3 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+    .empty-state p { font-size: 0.88rem; color: var(--text-muted); max-width: 500px; margin: 0 auto; }
+    .app-footer { text-align: center; padding: 20px; font-size: 0.78rem; color: var(--text-dim); border-top: 1px solid var(--border-color); margin-top: 32px; }
+
+    @media (max-width: 1024px) { .overview-top-grid { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .app-sidebar { width: 64px; } .brand-name, .nav-link span { display: none; } .app-main { margin-left: 64px; } .search-bar-wrapper { width: 200px; } .workspace-content { padding: 16px; } }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="app-sidebar">
+    <div class="sidebar-header">
+      <span class="brand-name">QK Researcher</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-link active" onclick="switchNavTab('overviewPane')">
+        <i class="fa-solid fa-house"></i>
+        <span>Overview</span>
+      </button>
+
+      <button class="nav-link" onclick="switchNavTab('tracePane')">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Research runs</span>
+      </button>
+
+      <button class="nav-link" onclick="switchNavTab('reportsPane')">
+        <i class="fa-solid fa-file-lines"></i>
+        <span>Reports</span>
+      </button>
+
+      <button class="nav-link" onclick="switchNavTab('watchlistPane')">
+        <i class="fa-solid fa-star"></i>
+        <span>Saved companies</span>
+      </button>
+
+      <button class="nav-link" onclick="switchNavTab('memoryPane')">
+        <i class="fa-solid fa-brain"></i>
+        <span>Vector memory</span>
+      </button>
+
+      <button class="nav-link" onclick="switchNavTab('scorecardPane')">
+        <i class="fa-solid fa-gear"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- MAIN APP AREA -->
+  <div class="app-main">
+    
+    <!-- TOP NAVBAR -->
+    <header class="top-navbar">
+      <div class="search-bar-wrapper">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" class="search-input" placeholder="Search companies, tickers, or topics..." id="globalSearchInput">
+        <span class="search-shortcut">⌘K</span>
+      </div>
+
+      <div class="navbar-actions">
+        <div class="status-badge">
+          <span class="pulse-dot"></span>
+          <span>SEC data connected</span>
+        </div>
+
+        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Bright/Dark Mode">
+          <i class="fa-solid fa-sun" id="themeToggleIcon"></i>
+          <span id="themeToggleText">Bright Mode</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- TOP MARKET INFORMATION TICKER BAR -->
+    <div class="market-ticker-bar" id="marketTickerBar">
+      <div class="ticker-label"><i class="fa-solid fa-chart-line"></i> MARKETS</div>
+      <div class="ticker-track-wrapper">
+        <div class="ticker-track" id="tickerTrackContainer">
+          <span class="ticker-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading live market feed...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKSPACE CONTENT -->
+    <main class="workspace-content">
+      
+      <!-- SUB-VIEW 1: OVERVIEW -->
+      <div id="overviewPane" class="tab-pane active">
+        
+        <div class="page-header">
+          <h1 class="greeting-title">Welcome</h1>
+          <p class="greeting-subtitle">Build a defensible research brief from filings in minutes.</p>
+        </div>
+
+        <!-- TOP ROW GRID: FORM + HEALTH CARD -->
+        <div class="overview-top-grid">
+          
+          <!-- START A NEW RESEARCH BRIEF FORM CARD -->
+          <div class="card">
+            <h2 class="card-title">Start a new research brief</h2>
+            
+            <form id="researchForm">
+              <div class="form-grid">
+                <div class="field-group">
+                  <label class="field-label" for="tickerSelect">Enter Ticker / Company / CIK</label>
+                  <input class="select-input" id="tickerSelect" type="text" placeholder="e.g. AAPL, NBP, HBL, MEBL, JPM, NVDA..." value="" oninput="onTickerSelectChange()">
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label" for="promptTextarea">What do you want to analyze?</label>
+                  <div class="textarea-wrapper">
+                    <textarea class="textarea-input" id="promptTextarea" placeholder="Describe analysis scope (e.g. Analyze revenue, net income, assets for last 3 fiscal years)..." oninput="updateCharCounter()"></textarea>
+                    <span class="char-counter" id="charCounter">0 / 500</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-bottom-bar">
+                <div class="suggestions-group">
+                  <span class="suggestions-label">Popular Examples</span>
+                  <button type="button" class="chip-btn" onclick="setTickerChip('JPM', 'Banks')">
+                    <i class="fa-solid fa-building-columns"></i> JPM
+                  </button>
+                  <button type="button" class="chip-btn" onclick="setTickerChip('AAPL', 'Technology')">
+                    <i class="fa-brands fa-apple"></i> AAPL
+                  </button>
+                  <button type="button" class="chip-btn" onclick="setTickerChip('MSFT', 'Technology')">
+                    <i class="fa-brands fa-microsoft"></i> MSFT
+                  </button>
+                  <button type="button" class="chip-btn" onclick="setTickerChip('NVDA', 'Technology')">
+                    <i class="fa-solid fa-microchip"></i> NVDA
+                  </button>
+                  <button type="button" class="chip-btn" onclick="setTickerChip('TSLA', 'Automotive')">
+                    <i class="fa-solid fa-car"></i> TSLA
+                  </button>
+                </div>
+
+                <button type="submit" class="btn-primary" id="runResearchBtn">
+                  <i class="fa-solid fa-play"></i>
+                  <span>Run research</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- RESEARCH HEALTH CARD -->
+          <div class="card" id="healthCardContainer" style="display: none;">
+            <h2 class="card-title">
+              <span>Research health</span>
+              <i class="fa-solid fa-shield-halved" style="color: var(--accent-blue);"></i>
+            </h2>
+
+            <div class="health-metrics-list">
+              <div class="health-item">
+                <div class="health-item-header">
+                  <span class="health-item-label">Source coverage</span>
+                  <span class="health-item-val" id="valSourceCoverage">100%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" id="barSourceCoverage" style="width: 100%;"></div>
+                </div>
+              </div>
+
+              <div class="health-item">
+                <div class="health-item-header">
+                  <span class="health-item-label">Period alignment</span>
+                  <span class="health-item-val" id="valPeriodAlignment">100%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" id="barPeriodAlignment" style="width: 100%;"></div>
+                </div>
+              </div>
+
+              <div class="health-item">
+                <div class="health-item-header">
+                  <span class="health-item-label">Conflict checks</span>
+                  <span class="health-item-val" id="valConflictChecks">100%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" id="barConflictChecks" style="width: 100%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <a href="#" class="card-link" onclick="switchNavTab('scorecardPane')">
+              View details <i class="fa-solid fa-angle-right"></i>
+            </a>
+          </div>
+
+        </div>
+
+        <!-- INITIAL BLANK STATE -->
+        <div id="initialBlankState" class="card empty-state">
+          <i class="fa-solid fa-magnifying-glass-chart"></i>
+          <h3>Welcome to QK Researcher</h3>
+          <p>Search for any SEC-reporting public company above or select a ticker to run research, inspect SEC filings, and generate institutional research reports.</p>
+        </div>
+
+        <!-- RESEARCH RESULTS CONTAINER (HIDDEN UNTIL SEARCHED) -->
+        <div id="researchResultsContainer" style="display: none;">
+
+          <!-- LATEST BRIEF CARD -->
+          <div class="card brief-card" id="briefCardContainer">
+            <div class="brief-header-row">
+              <div class="company-brand-row">
+                <div class="company-logo-badge" id="briefLogoBadge">--</div>
+                <div class="company-info">
+                  <h3 id="briefCompanyName">--</h3>
+                  <p id="briefCompanySector">--</p>
+
+                  <div class="metric-pills">
+                    <button class="metric-pill-btn active" onclick="setChartMetric('revenue')">Revenue</button>
+                    <button class="metric-pill-btn" onclick="setChartMetric('net_income')">Net income</button>
+                    <button class="metric-pill-btn" onclick="setChartMetric('total_assets')">Total assets</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="verification-tag" id="briefVerificationTag">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Citations verified</span>
+              </div>
+            </div>
+
+            <!-- INTERACTIVE FINANCIAL CHART -->
+            <div class="chart-container" id="chartContainer">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+
+            <div class="brief-footer-row">
+              <div>
+                <span id="briefPeriodLabel">Period: --</span> • <span id="briefTimestamp">--</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <a href="#" class="card-link" onclick="switchNavTab('reportsPane')">
+                  View brief <i class="fa-solid fa-angle-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- RECENT FILINGS CARD -->
+          <div class="card" id="recentFilingsCard">
+            <h2 class="card-title">Recent filings</h2>
+
+            <div class="filings-table-wrapper">
+              <table class="filings-table">
+                <thead>
+                  <tr>
+                    <th>Fiscal year</th>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody id="recentFilingsBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <a href="#" class="card-link" onclick="switchNavTab('reportsPane')">
+              View all filings <i class="fa-solid fa-angle-right"></i>
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- SUB-VIEW 2: RESEARCH RUNS -->
+      <div id="tracePane" class="tab-pane">
+        <div class="page-header">
+          <h1 class="greeting-title">Research runs</h1>
+          <p class="greeting-subtitle">ReAct agent scratchpad reasoning trajectory and environment logs.</p>
+        </div>
+
+        <div class="card">
+          <div id="traceContainer" class="trace-feed">
+            <div class="empty-state">
+              <i class="fa-solid fa-terminal"></i>
+              <h3>No active research trace recorded</h3>
+              <p>Execute research from Overview to inspect ReAct reasoning steps.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 3: REPORTS -->
+      <div id="reportsPane" class="tab-pane">
+        <div class="page-header">
+          <h1 class="greeting-title">Institutional Reports</h1>
+          <p class="greeting-subtitle">Synthesized research brief with full citations and XBRL statements.</p>
+        </div>
+
+        <div class="card">
+          <div class="brief-footer-row" style="margin-bottom: 20px; border-top: none; padding-top: 0;" id="reportDownloadBar">
+            <div>
+              <span id="reportHeaderTicker">--</span> • SEC EDGAR Statutory Disclosures
+            </div>
+            <a href="#" id="pdfDownloadBtn" class="btn-primary" target="_blank">
+              <i class="fa-solid fa-file-pdf"></i>
+              <span>Download Report</span>
+            </a>
+          </div>
+
+          <div id="reportMarkdownContainer">
+            <div class="empty-state">
+              <i class="fa-solid fa-file-contract"></i>
+              <h3>No research report generated yet</h3>
+              <p>Enter a ticker in the Overview tab to generate an institutional financial report.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 4: WATCHLIST -->
+      <div id="watchlistPane" class="tab-pane">
+        <div class="page-header">
+          <h1 class="greeting-title">Saved Companies</h1>
+          <p class="greeting-subtitle">Tracked institutional entities and recent research briefs.</p>
+        </div>
+
+        <div class="card">
+          <div class="empty-state">
+            <i class="fa-solid fa-star"></i>
+            <h3>No saved companies</h3>
+            <p>Bookmark companies during research runs to populate your saved list.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 5: SETTINGS & EVAL SCORECARD -->
+      <div id="scorecardPane" class="tab-pane">
+        <div class="page-header">
+          <h1 class="greeting-title">System Settings & Quality Scorecard</h1>
+          <p class="greeting-subtitle">Autonomous financial research agent evaluation metrics and health status.</p>
+        </div>
+
+        <div class="card">
+          <div id="scorecardContainer">
+            <div class="empty-state">
+              <i class="fa-solid fa-clipboard-check"></i>
+              <h3>No research evaluation scorecard</h3>
+              <p>Run a research brief to generate an automated evaluation audit scorecard.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 6: VECTOR MEMORY -->
+      <div id="memoryPane" class="tab-pane">
+        <div class="page-header">
+          <h1 class="greeting-title">Vector Memory Explorer</h1>
+          <p class="greeting-subtitle">Semantic search over chunked long-term memory findings stored in ChromaDB.</p>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <input type="text" class="select-input" id="memorySearchQuery" placeholder="Enter semantic query e.g. revenue growth, net interest margin..." style="flex: 1;">
+            <button class="btn-primary" onclick="searchVectorMemory()"><i class="fa-solid fa-magnifying-glass"></i> Search Memory</button>
+          </div>
+
+          <div id="memorySearchResults">
+            <div class="empty-state">
+              <i class="fa-solid fa-brain"></i>
+              <h3>Search Vector Memory</h3>
+              <p>Type a financial topic above to retrieve semantic memory chunks from ChromaDB.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="app-footer">
+      <p>QK Researcher • SEC EDGAR Statutory Disclosures • Autonomous BFSI Financial Agent</p>
+    </footer>
+  </div>
+
+  <!-- External App JS Controller -->
+  <script src="app.js"></script>
+</body>
+</html>
